@@ -1,111 +1,44 @@
 import streamlit as st
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableSequence
-import os
 import time
 from datetime import datetime
-from dotenv import load_dotenv
+import logging
 
-# ------------------ Environment Variables ------------------
-load_dotenv()
+# Import RAG Service
+from rag_service import RAGService
+from config import GOOGLE_API_KEY
 
-# ------------------ API Keys ------------------
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+# ------------------ Initialize RAG Service ------------------
+@st.cache_resource
+def get_rag_service():
+    """Initialize and cache RAG service."""
+    try:
+        return RAGService()
+    except Exception as e:
+        st.error(f"Error initializing RAG service: {str(e)}")
+        return None
+
+rag_service = get_rag_service()
+
+if not rag_service:
+    st.error("⚠️ Failed to initialize RAG service. Please check your configuration.")
+    st.stop()
+
 if not GOOGLE_API_KEY:
     st.error("⚠️ GOOGLE_API_KEY not found! Please define GOOGLE_API_KEY variable in .env file.")
     st.stop()
 
-# ------------------ VectorStore and Embedding ------------------
-embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-VECTORSTORE_DIR = r"C:\Users\samet\OneDrive\Belgeler\GitHub\Chatbot-Project\project\yeni\medical_vectorstore"
-vectorstore = Chroma(persist_directory=VECTORSTORE_DIR, embedding_function=embedding_model)
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-
-# ------------------ LLM and Prompt ------------------
-llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.2, google_api_key=GOOGLE_API_KEY)
-
-template = """
-You are an experienced medical assistant supporting a doctor in evaluating a patient’s symptoms. Based on the provided context and the doctor’s question, respond clearly and professionally. Do not copy the context directly—paraphrase and interpret it to generate a medically sound, structured answer.
-
-Your response **must** be divided into three clear paragraphs:
-1. **Diagnosis**: State the most likely medical diagnosis using precise terminology.
-2. **Clinical Reasoning**: Explain key findings from the context that support this diagnosis.
-3. **Interpretation**: Provide guidance to help the doctor link the diagnosis to the patient’s symptoms.
-
-**Strict Content Guidelines**:
-- If the input is unrelated to healthcare, diagnosis, or symptoms (e.g., general knowledge, greetings, names), reply:
-  > "This system is designed exclusively for medical diagnostic assistance; I cannot answer unrelated questions."
-- If the input lacks sufficient clinical detail (e.g., "I have a headache" without additional information), reply:
-  > "More clinical information is required; please elaborate on symptoms and findings."
-
-**Retrieval Check**:
-- If there is no relevant medical context (e.g., retrieved documents list is empty or similarity scores are below threshold), reply:
-  > "I’m sorry, I couldn’t find enough relevant medical information to answer your question. Could you please provide more details about the patient’s history and symptoms?"
-
-Context:
-{context}
-
-Doctor’s Question:
-{question}
-
-Respond only with the three paragraphs described. Do not add any extra sections or disclaimers.
-"""
-
-prompt = ChatPromptTemplate.from_template(template)
-chain = prompt | llm
-
 # ------------------ Main Function ------------------
 def generate_medical_response(complaint):
-    try:
-        docs = retriever.invoke(complaint)
-        if not docs:
-            return {
-                "response": "[Warning] Relevant context not found.",
-                "sources": [],
-                "context": ""
-            }
-
-        # Get context directly from page content
-        context = "\n\n".join([
-            doc.page_content for doc in docs
-        ])
-
-        # Continue with LLM call even if still empty:
-        # context = "" assignment ensures chain.invoke still works.
-        if not context.strip():
-            context = ""
-
-        response = chain.invoke({
-            "question": complaint,
-            "context": context
-        })
-
-        if not response.content.strip():
-            return {
-                "response": "[Warning] Model did not return a response.",
-                "sources": [],
-                "context": context
-            }
-
-        # Prepare source documents (first 500 characters)
-        sources = [doc.page_content[:500] + "..." if len(doc.page_content) > 500 else doc.page_content 
-                   for doc in docs]
-
+    """Generate medical response using RAG service."""
+    if not rag_service:
         return {
-            "response": response.content,
-            "sources": sources,
-            "context": context[:1000] + "..." if len(context) > 1000 else context  # First 1000 characters
-        }
-
-    except Exception as e:
-        return {
-            "response": f"[GENERAL ERROR] {str(e)}",
+            "response": "[Error] RAG service not available.",
             "sources": [],
-            "context": ""
+            "context": "",
+            "metadata": {}
         }
+    
+    return rag_service.process_query(complaint)
 
 # ------------------ Chat UI and Chat History ------------------
 st.set_page_config(page_title="Health Assistant", layout="centered")
@@ -218,24 +151,30 @@ elif page == "Chat":
             date    = datetime.now().strftime("%d %b %Y")
             st.session_state.chat_titles[active] = f"{summary} - {date}"
 
-        history.append({"role": "user",      "content": user_input})
-        with st.spinner("Analyzing text..."):
+            history.append({"role": "user",      "content": user_input})
+        with st.spinner("Processing query through RAG pipeline..."):
             result = generate_medical_response(user_input)
             # Check for backward compatibility
             if isinstance(result, dict):
                 response_text = result["response"]
                 sources = result.get("sources", [])
                 context = result.get("context", "")
+                metadata = result.get("metadata", {})
+                execution_trace = result.get("execution_trace", None)
             else:
                 response_text = result
                 sources = []
                 context = ""
+                metadata = {}
+                execution_trace = None
             
             history.append({
                 "role": "assistant", 
                 "content": response_text,
                 "sources": sources,
-                "context": context
+                "context": context,
+                "metadata": metadata,
+                "execution_trace": execution_trace
             })
 
     # 2.4) Display Messages
@@ -253,12 +192,21 @@ elif page == "Chat":
                 st.markdown(content)
                 # Show vectorstore sources
                 if role == "assistant" and sources:
-                    with st.expander("🔍 Sources from Vectorstore (First 500 characters)"):
+                    with st.expander("🔍 Sources from Milvus Vectorstore (First 500 characters)"):
                         st.info(f"✅ {len(sources)} documents found and used")
                         for i, source in enumerate(sources, 1):
                             st.markdown(f"**Source {i}:**")
                             st.text(source)
                             st.markdown("---")
+                
+                # Show execution trace if available (Agentic RAG)
+                if role == "assistant" and msg.get("execution_trace"):
+                    with st.expander("🤖 Agentic RAG Execution Trace"):
+                        trace = msg["execution_trace"]
+                        st.json({
+                            "iterations": trace.get("iterations", 0),
+                            "plan": trace.get("plan", {}).get("task_type", "unknown")
+                        })
         else:
             with st.chat_message(role):
                 if role == "assistant":
@@ -275,12 +223,21 @@ elif page == "Chat":
                     
                     # Show vectorstore sources
                     if sources:
-                        with st.expander("🔍 Sources from Vectorstore (First 500 characters)"):
+                        with st.expander("🔍 Sources from Milvus Vectorstore (First 500 characters)"):
                             st.info(f"✅ {len(sources)} documents found and used")
                             for i, source in enumerate(sources, 1):
                                 st.markdown(f"**Source {i}:**")
                                 st.text(source)
                                 st.markdown("---")
+                    
+                    # Show execution trace if available (Agentic RAG)
+                    if msg.get("execution_trace"):
+                        with st.expander("🤖 Agentic RAG Execution Trace"):
+                            trace = msg["execution_trace"]
+                            st.json({
+                                "iterations": trace.get("iterations", 0),
+                                "plan": trace.get("plan", {}).get("task_type", "unknown")
+                            })
                 else:
                     content = msg.get("content", "")
                     st.markdown(content)

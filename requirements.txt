@@ -5,4 +5,6 @@ langchain-google-genai
 langchain-core
 python-dotenv
 sentence-transformers
+pymilvus>=2.3.0
+numpy
 
