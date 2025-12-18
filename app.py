@@ -2,10 +2,31 @@ import streamlit as st
 import time
 from datetime import datetime
 import logging
+import sys
+from flask import Flask, jsonify
 
 # Import RAG Service
 from rag_service import RAGService
-from config import GOOGLE_API_KEY
+from config import GOOGLE_API_KEY, MODELARTS_ENDPOINT, DEEPSEEK_API_KEY
+
+# Health check Flask app (runs on separate port for ELB health checks)
+health_app = Flask(__name__)
+
+@health_app.route('/health')
+def health_check():
+    """Health check endpoint for ELB."""
+    try:
+        # Basic health check - can be extended to check Milvus, etc.
+        return jsonify({
+            "status": "healthy",
+            "service": "huaweict-health-assistant",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e)
+        }), 503
 
 # ------------------ Initialize RAG Service ------------------
 @st.cache_resource
@@ -23,8 +44,9 @@ if not rag_service:
     st.error("⚠️ Failed to initialize RAG service. Please check your configuration.")
     st.stop()
 
-if not GOOGLE_API_KEY:
-    st.error("⚠️ GOOGLE_API_KEY not found! Please define GOOGLE_API_KEY variable in .env file.")
+# Check if at least one LLM is configured
+if not GOOGLE_API_KEY and not (MODELARTS_ENDPOINT and DEEPSEEK_API_KEY):
+    st.error("⚠️ No LLM configured! Please define either GOOGLE_API_KEY or MODELARTS_ENDPOINT+DEEPSEEK_API_KEY in .env file.")
     st.stop()
 
 # ------------------ Main Function ------------------
@@ -190,23 +212,39 @@ elif page == "Chat":
                 content = msg.get("content", msg.get("response", ""))
                 sources = msg.get("sources", [])
                 st.markdown(content)
+                # Show GraphRAG information
+                if role == "assistant":
+                    metadata = msg.get("metadata", {})
+                    graphrag_info = msg.get("graphrag_info", {}) or metadata.get("graphrag", {})
+                    
+                    if graphrag_info:
+                        method = graphrag_info.get("method", "Unknown")
+                        if method == "GraphRAG":
+                            with st.expander("📊 GraphRAG Retrieval Info"):
+                                st.success(f"✅ **Method:** {method}")
+                                st.info(f"""
+                                - **Nodes Found:** {graphrag_info.get('nodes_found', 0)}
+                                - **Graph Edges:** {graphrag_info.get('edges_found', 0)}
+                                - **Traversal Depth:** {graphrag_info.get('graph_traversal_depth', 0)}
+                                - **Retrieval Method:** {graphrag_info.get('retrieval_method', 'N/A')}
+                                """)
+                                st.caption("💡 This response was generated using GraphRAG: Vector search + Graph traversal from Milvus")
+                        elif method == "Agentic RAG":
+                            with st.expander("🤖 Agentic RAG Execution Trace"):
+                                trace = msg.get("execution_trace", {})
+                                st.json({
+                                    "iterations": trace.get("iterations", 0),
+                                    "plan": trace.get("plan", {}).get("task_type", "unknown")
+                                })
+                
                 # Show vectorstore sources
                 if role == "assistant" and sources:
-                    with st.expander("🔍 Sources from Milvus Vectorstore (First 500 characters)"):
-                        st.info(f"✅ {len(sources)} documents found and used")
+                    with st.expander("🔍 Sources from GraphRAG (Q&A Pairs)"):
+                        st.info(f"✅ {len(sources)} Q&A pairs retrieved from Milvus")
                         for i, source in enumerate(sources, 1):
                             st.markdown(f"**Source {i}:**")
                             st.text(source)
                             st.markdown("---")
-                
-                # Show execution trace if available (Agentic RAG)
-                if role == "assistant" and msg.get("execution_trace"):
-                    with st.expander("🤖 Agentic RAG Execution Trace"):
-                        trace = msg["execution_trace"]
-                        st.json({
-                            "iterations": trace.get("iterations", 0),
-                            "plan": trace.get("plan", {}).get("task_type", "unknown")
-                        })
         else:
             with st.chat_message(role):
                 if role == "assistant":
@@ -221,23 +259,38 @@ elif page == "Chat":
                             time.sleep(0.05)
                         typed += "\n\n"
                     
+                    # Show GraphRAG information
+                    metadata = msg.get("metadata", {})
+                    graphrag_info = msg.get("graphrag_info", {}) or metadata.get("graphrag", {})
+                    
+                    if graphrag_info:
+                        method = graphrag_info.get("method", "Unknown")
+                        if method == "GraphRAG":
+                            with st.expander("📊 GraphRAG Retrieval Info"):
+                                st.success(f"✅ **Method:** {method}")
+                                st.info(f"""
+                                - **Nodes Found:** {graphrag_info.get('nodes_found', 0)}
+                                - **Graph Edges:** {graphrag_info.get('edges_found', 0)}
+                                - **Traversal Depth:** {graphrag_info.get('graph_traversal_depth', 0)}
+                                - **Retrieval Method:** {graphrag_info.get('retrieval_method', 'N/A')}
+                                """)
+                                st.caption("💡 This response was generated using GraphRAG: Vector search + Graph traversal from Milvus")
+                        elif method == "Agentic RAG":
+                            with st.expander("🤖 Agentic RAG Execution Trace"):
+                                trace = msg.get("execution_trace", {})
+                                st.json({
+                                    "iterations": trace.get("iterations", 0),
+                                    "plan": trace.get("plan", {}).get("task_type", "unknown")
+                                })
+                    
                     # Show vectorstore sources
                     if sources:
-                        with st.expander("🔍 Sources from Milvus Vectorstore (First 500 characters)"):
-                            st.info(f"✅ {len(sources)} documents found and used")
+                        with st.expander("🔍 Sources from GraphRAG (Q&A Pairs)"):
+                            st.info(f"✅ {len(sources)} Q&A pairs retrieved from Milvus")
                             for i, source in enumerate(sources, 1):
                                 st.markdown(f"**Source {i}:**")
                                 st.text(source)
                                 st.markdown("---")
-                    
-                    # Show execution trace if available (Agentic RAG)
-                    if msg.get("execution_trace"):
-                        with st.expander("🤖 Agentic RAG Execution Trace"):
-                            trace = msg["execution_trace"]
-                            st.json({
-                                "iterations": trace.get("iterations", 0),
-                                "plan": trace.get("plan", {}).get("task_type", "unknown")
-                            })
                 else:
                     content = msg.get("content", "")
                     st.markdown(content)

@@ -10,11 +10,12 @@ from config import (
     MILVUS_HOST, MILVUS_PORT, MILVUS_COLLECTION_NAME,
     EMBEDDING_MODEL_NAME, LLM_MODEL, LLM_TEMPERATURE,
     RETRIEVAL_TOP_K, GRAPH_RAG_ENABLED, AGENTIC_RAG_ENABLED,
-    AGENT_MAX_ITERATIONS, AGENT_REASONING_ENABLED
+    AGENT_MAX_ITERATIONS, AGENT_REASONING_ENABLED, GRAPH_MAX_DEPTH
 )
 from input_processing import InputProcessor
 from agentic_orchestrator import AgenticOrchestrator
 from context_integration import ContextIntegrator
+from modelarts_client import ModelArtsClient
 
 # LLM imports
 try:
@@ -37,10 +38,17 @@ class RAGService:
         """Initialize RAG Service with all components."""
         # Initialize components
         self.input_processor = InputProcessor()
+        from config import MILVUS_API_KEY, MILVUS_USER, MILVUS_PASSWORD, MILVUS_USE_CLOUD
+        # Initialize context integrator with RDS support (if RDS configured)
         self.context_integrator = ContextIntegrator(
             milvus_host=MILVUS_HOST,
             milvus_port=MILVUS_PORT,
-            collection_name=MILVUS_COLLECTION_NAME
+            collection_name=MILVUS_COLLECTION_NAME,
+            milvus_api_key=MILVUS_API_KEY,
+            milvus_user=MILVUS_USER,
+            milvus_password=MILVUS_PASSWORD,
+            use_cloud=MILVUS_USE_CLOUD,
+            use_rds=True  # Enable RDS enrichment if available
         )
         self.agentic_orchestrator = AgenticOrchestrator(
             max_iterations=AGENT_MAX_ITERATIONS,
@@ -54,17 +62,22 @@ class RAGService:
             logger.error(f"Error initializing embedding model: {str(e)}")
             self.embedding_model = None
         
-        # Initialize LLM
+        # Initialize LLM - Try ModelArts DeepSeek first, fallback to Gemini
+        self.modelarts_client = ModelArtsClient()
+        self.llm_gemini = None
+        
+        # Initialize Gemini as fallback
         try:
             from config import GOOGLE_API_KEY
-            self.llm = ChatGoogleGenerativeAI(
-                model=LLM_MODEL,
-                temperature=LLM_TEMPERATURE,
-                google_api_key=GOOGLE_API_KEY
-            )
+            if GOOGLE_API_KEY:
+                self.llm_gemini = ChatGoogleGenerativeAI(
+                    model="gemini-2.5-flash",
+                    temperature=LLM_TEMPERATURE,
+                    google_api_key=GOOGLE_API_KEY
+                )
+                logger.info("✅ Gemini LLM initialized as fallback")
         except Exception as e:
-            logger.error(f"Error initializing LLM: {str(e)}")
-            self.llm = None
+            logger.warning(f"Gemini LLM not available: {str(e)}")
         
         # Initialize prompt template
         self.prompt_template = self._create_prompt_template()
@@ -128,6 +141,8 @@ Respond only with the three paragraphs described. Do not add any extra sections 
             # Step 3: Agentic Orchestration (if enabled)
             execution_result = None
             vector_results = []
+            graph_results = None
+            
             if AGENTIC_RAG_ENABLED:
                 logger.info("Step 3: Agentic Orchestration")
                 plan = self.agentic_orchestrator.plan_task(
@@ -136,69 +151,117 @@ Respond only with the three paragraphs described. Do not add any extra sections 
                 )
                 
                 # Execute with reasoning
+                # Use Gemini LLM for agentic orchestrator if available
+                llm_for_agent = self.llm_gemini if self.llm_gemini else None
+                if not llm_for_agent:
+                    logger.warning("No LLM available for agentic orchestrator")
                 execution_result = self.agentic_orchestrator.execute_with_reasoning(
                     plan,
                     self.context_integrator,
-                    self.llm
+                    llm_for_agent
                 )
                 
                 # Use orchestrated context
-                integrated_context = execution_result["final_context"]
+                integrated_context = execution_result.get("final_context", "")
             else:
-                # Step 3: Simple Vector Retrieval
-                logger.info("Step 3: Vector Retrieval")
-                vector_results = self.context_integrator.retrieve_vector_context(
+                # Step 3: GraphRAG Retrieval (PRIMARY METHOD)
+                logger.info("Step 3: GraphRAG Retrieval")
+                graph_results = self.context_integrator.retrieve_graphrag_context(
                     query_embedding,
-                    top_k=RETRIEVAL_TOP_K
+                    top_k=RETRIEVAL_TOP_K,
+                    max_depth=GRAPH_MAX_DEPTH if GRAPH_RAG_ENABLED else 1
                 )
                 
-                # Step 4: GraphRAG (if enabled)
-                graph_results = {"nodes": [], "edges": [], "context": ""}
-                if GRAPH_RAG_ENABLED and processed_input.get("entities"):
-                    logger.info("Step 4: GraphRAG Retrieval")
-                    entity_ids = processed_input.get("entities", [])
-                    graph_results = self.context_integrator.retrieve_graph_context(
-                        entity_ids,
-                        max_depth=3
-                    )
-                
-                # Step 5: Context Integration
-                logger.info("Step 5: Context Integration")
+                # Step 4: Context Integration
+                logger.info("Step 4: Context Integration")
                 integrated_context = self.context_integrator.integrate_contexts(
-                    vector_results,
-                    graph_results
+                    graph_results=graph_results
                 )
+                
+                # Store for sources extraction
+                vector_results = graph_results.get("qa_pairs", []) if graph_results else []
             
             # Step 6: Generate Response
             logger.info("Step 6: Generating Response")
-            if not self.llm:
+            
+            # Try ModelArts DeepSeek first, fallback to Gemini
+            response_text = None
+            llm_used = "unknown"
+            
+            # Try ModelArts DeepSeek
+            if self.modelarts_client.is_available() and LLM_MODEL == "deepseek-v3.1":
+                logger.info("Using ModelArts DeepSeek v3.1")
+                full_prompt = self.prompt_template.format(
+                    context=integrated_context,
+                    question=user_query
+                )
+                api_response = self.modelarts_client.invoke_deepseek(full_prompt)
+                if api_response:
+                    response_text = self.modelarts_client.extract_response_text(api_response)
+                    llm_used = "deepseek-v3.1"
+            
+            # Fallback to Gemini if ModelArts failed or not configured
+            if not response_text and self.llm_gemini:
+                logger.info("Falling back to Google Gemini")
+                try:
+                    from langchain_core.prompts import ChatPromptTemplate
+                    prompt = ChatPromptTemplate.from_template(self.prompt_template)
+                    chain = prompt | self.llm_gemini
+                    response = chain.invoke({
+                        "question": user_query,
+                        "context": integrated_context
+                    })
+                    response_text = response.content if hasattr(response, 'content') else str(response)
+                    llm_used = "gemini-2.5-flash"
+                except Exception as e:
+                    logger.error(f"Gemini fallback failed: {e}")
+            
+            # If still no response, return error
+            if not response_text:
                 return {
-                    "response": "[Error] LLM not available.",
+                    "response": "[Error] No LLM available. Please configure ModelArts or Gemini API key.",
                     "sources": [],
                     "context": integrated_context,
                     "metadata": processed_input
                 }
             
-            from langchain_core.prompts import ChatPromptTemplate
-            prompt = ChatPromptTemplate.from_template(self.prompt_template)
-            chain = prompt | self.llm
-            
-            response = chain.invoke({
-                "question": user_query,
-                "context": integrated_context
-            })
-            
-            # Prepare sources
+            # Prepare sources and GraphRAG metadata
             sources = []
+            graphrag_metadata = {}
+            
             if not AGENTIC_RAG_ENABLED:
-                # Use already retrieved vector_results from above
-                sources = [
-                    result.get("text", "")[:500] + "..." 
-                    if len(result.get("text", "")) > 500 
-                    else result.get("text", "")
-                    for result in vector_results
-                ]
+                # GraphRAG was used - extract detailed information
+                graphrag_metadata = {
+                    "method": "GraphRAG",
+                    "enabled": GRAPH_RAG_ENABLED,
+                    "max_depth": GRAPH_MAX_DEPTH if GRAPH_RAG_ENABLED else 1,
+                    "nodes_found": len(graph_results.get("nodes", [])),
+                    "edges_found": len(graph_results.get("edges", [])),
+                    "initial_matches": len(graph_results.get("nodes", [])) if graph_results else 0,
+                    "graph_traversal_depth": graph_results.get("depth", 0) if graph_results else 0,
+                    "retrieval_method": "Vector Search + Graph Traversal"
+                }
+                
+                # Use GraphRAG Q&A pairs as sources with similarity scores
+                sources = []
+                for idx, result in enumerate(vector_results[:5], 1):  # Top 5 Q&A pairs
+                    similarity = result.get('similarity', 0.0)
+                    question = result.get('question', '')
+                    answer_text = result.get('response', '')
+                    
+                    source_text = f"[{idx}] Similarity: {similarity:.3f}\n"
+                    source_text += f"Q: {question[:200]}...\n" if len(question) > 200 else f"Q: {question}\n"
+                    source_text += f"A: {answer_text[:300]}..." if len(answer_text) > 300 else f"A: {answer_text}"
+                    
+                    sources.append(source_text)
             else:
+                # Agentic RAG was used
+                graphrag_metadata = {
+                    "method": "Agentic RAG",
+                    "enabled": AGENTIC_RAG_ENABLED,
+                    "iterations": execution_result.get("iterations", 0) if execution_result else 0
+                }
+                
                 # For agentic RAG, extract sources from execution trace if available
                 if execution_result:
                     # Try to extract sources from iteration history
@@ -211,12 +274,26 @@ Respond only with the three paragraphs described. Do not add any extra sections 
                     else:
                         sources = ["Agentic reasoning completed"]
             
+            # Add GraphRAG metadata to processed_input metadata
+            enhanced_metadata = {
+                **processed_input,
+                "graphrag": graphrag_metadata,
+                "retrieval_stats": {
+                    "sources_count": len(sources),
+                    "context_length": len(integrated_context)
+                }
+            }
+            
+            # Add LLM info to metadata
+            enhanced_metadata["llm_used"] = llm_used
+            
             return {
-                "response": response.content if hasattr(response, 'content') else str(response),
+                "response": response_text,
                 "sources": sources,
                 "context": integrated_context[:1000] + "..." if len(integrated_context) > 1000 else integrated_context,
-                "metadata": processed_input,
-                "execution_trace": execution_result if AGENTIC_RAG_ENABLED else None
+                "metadata": enhanced_metadata,
+                "execution_trace": execution_result if AGENTIC_RAG_ENABLED else None,
+                "graphrag_info": graphrag_metadata  # Explicit GraphRAG info
             }
         
         except Exception as e:
