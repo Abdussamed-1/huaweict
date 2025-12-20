@@ -540,3 +540,4 @@ class RDSClient:
             self.conn.close()
             logger.info("RDS connection closed")
 
+

@@ -1,32 +1,23 @@
 import streamlit as st
 import time
+import os
 from datetime import datetime
 import logging
-import sys
-from flask import Flask, jsonify
 
 # Import RAG Service
 from rag_service import RAGService
-from config import GOOGLE_API_KEY, MODELARTS_ENDPOINT, DEEPSEEK_API_KEY
+from config import (
+    GOOGLE_API_KEY, MODELARTS_ENDPOINT, DEEPSEEK_API_KEY,
+    DEEPSEEK_USE_DIRECT_API, LOG_LEVEL
+)
 
-# Health check Flask app (runs on separate port for ELB health checks)
-health_app = Flask(__name__)
-
-@health_app.route('/health')
-def health_check():
-    """Health check endpoint for ELB."""
-    try:
-        # Basic health check - can be extended to check Milvus, etc.
-        return jsonify({
-            "status": "healthy",
-            "service": "huaweict-health-assistant",
-            "timestamp": datetime.now().isoformat()
-        }), 200
-    except Exception as e:
-        return jsonify({
-            "status": "unhealthy",
-            "error": str(e)
-        }), 503
+# Configure logging for cloud
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # ------------------ Initialize RAG Service ------------------
 @st.cache_resource
@@ -41,12 +32,18 @@ def get_rag_service():
 rag_service = get_rag_service()
 
 if not rag_service:
+    logger.error("Failed to initialize RAG service")
     st.error("⚠️ Failed to initialize RAG service. Please check your configuration.")
     st.stop()
 
 # Check if at least one LLM is configured
-if not GOOGLE_API_KEY and not (MODELARTS_ENDPOINT and DEEPSEEK_API_KEY):
-    st.error("⚠️ No LLM configured! Please define either GOOGLE_API_KEY or MODELARTS_ENDPOINT+DEEPSEEK_API_KEY in .env file.")
+has_gemini = bool(GOOGLE_API_KEY)
+has_deepseek_direct = bool(DEEPSEEK_API_KEY and DEEPSEEK_USE_DIRECT_API)
+has_deepseek_modelarts = bool(DEEPSEEK_API_KEY and MODELARTS_ENDPOINT and not DEEPSEEK_USE_DIRECT_API)
+
+if not (has_gemini or has_deepseek_direct or has_deepseek_modelarts):
+    logger.error("No LLM configured")
+    st.error("⚠️ No LLM configured! Please configure either GOOGLE_API_KEY or DEEPSEEK_API_KEY in .env file.")
     st.stop()
 
 # ------------------ Main Function ------------------

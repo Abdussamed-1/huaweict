@@ -66,7 +66,10 @@ Type=simple
 User=ubuntu
 WorkingDirectory=/opt/huaweict/app
 Environment="PATH=/opt/huaweict/app/venv/bin"
-ExecStart=/opt/huaweict/app/venv/bin/streamlit run app.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true
+ExecStart=/opt/huaweict/app/venv/bin/streamlit run app.py --server.port=${STREAMLIT_SERVER_PORT:-8501} --server.address=${STREAMLIT_SERVER_ADDRESS:-0.0.0.0} --server.headless=true --server.enableCORS=false --server.enableXsrfProtection=false
+Environment="STREAMLIT_SERVER_PORT=8501"
+Environment="STREAMLIT_SERVER_ADDRESS=0.0.0.0"
+Environment="STREAMLIT_SERVER_HEADLESS=true"
 Restart=always
 RestartSec=10
 
@@ -86,6 +89,7 @@ User=ubuntu
 WorkingDirectory=/opt/huaweict/app
 Environment="PATH=/opt/huaweict/app/venv/bin"
 ExecStart=/opt/huaweict/app/venv/bin/python health_check.py
+Environment="HEALTH_CHECK_PORT=8080"
 Restart=always
 RestartSec=10
 

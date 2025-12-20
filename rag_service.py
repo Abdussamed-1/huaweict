@@ -10,7 +10,8 @@ from config import (
     MILVUS_HOST, MILVUS_PORT, MILVUS_COLLECTION_NAME,
     EMBEDDING_MODEL_NAME, LLM_MODEL, LLM_TEMPERATURE,
     RETRIEVAL_TOP_K, GRAPH_RAG_ENABLED, AGENTIC_RAG_ENABLED,
-    AGENT_MAX_ITERATIONS, AGENT_REASONING_ENABLED, GRAPH_MAX_DEPTH
+    AGENT_MAX_ITERATIONS, AGENT_REASONING_ENABLED, GRAPH_MAX_DEPTH,
+    DEEPSEEK_MODEL_NAME
 )
 from input_processing import InputProcessor
 from agentic_orchestrator import AgenticOrchestrator
@@ -25,8 +26,18 @@ try:
 except ImportError:
     logging.warning("LangChain imports not available. Some features may not work.")
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Use centralized logging config if available
+try:
+    from logging_config import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    # Fallback to basic logging
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
 
 
 class RAGService:
@@ -184,13 +195,20 @@ Respond only with the three paragraphs described. Do not add any extra sections 
             # Step 6: Generate Response
             logger.info("Step 6: Generating Response")
             
-            # Try ModelArts DeepSeek first, fallback to Gemini
+            # Try DeepSeek API first (direct or ModelArts), fallback to Gemini
             response_text = None
             llm_used = "unknown"
             
-            # Try ModelArts DeepSeek
-            if self.modelarts_client.is_available() and LLM_MODEL == "deepseek-v3.1":
-                logger.info("Using ModelArts DeepSeek v3.1")
+            # Check if DeepSeek should be used (supports multiple model names)
+            deepseek_models = ["deepseek-chat", "deepseek-v3.1", "deepseek-v3"]
+            use_deepseek = self.modelarts_client.is_available() and (
+                LLM_MODEL.lower() in deepseek_models or 
+                LLM_MODEL.lower().startswith("deepseek")
+            )
+            
+            # Try DeepSeek API (direct or ModelArts)
+            if use_deepseek:
+                logger.info(f"Using DeepSeek API: {LLM_MODEL}")
                 full_prompt = self.prompt_template.format(
                     context=integrated_context,
                     question=user_query
@@ -198,7 +216,7 @@ Respond only with the three paragraphs described. Do not add any extra sections 
                 api_response = self.modelarts_client.invoke_deepseek(full_prompt)
                 if api_response:
                     response_text = self.modelarts_client.extract_response_text(api_response)
-                    llm_used = "deepseek-v3.1"
+                    llm_used = LLM_MODEL.lower()
             
             # Fallback to Gemini if ModelArts failed or not configured
             if not response_text and self.llm_gemini:
@@ -297,12 +315,17 @@ Respond only with the three paragraphs described. Do not add any extra sections 
             }
         
         except Exception as e:
-            logger.error(f"Error processing query: {str(e)}")
+            logger.error(f"Error processing query: {str(e)}", exc_info=True)
+            # Return user-friendly error message without exposing internal details
+            error_message = "An error occurred while processing your query. Please try again."
+            if logger.level <= logging.DEBUG:
+                error_message += f" (Error: {str(e)})"
+            
             return {
-                "response": f"[GENERAL ERROR] {str(e)}",
+                "response": error_message,
                 "sources": [],
                 "context": "",
-                "metadata": {},
+                "metadata": {"error": True},
                 "execution_trace": None
             }
 

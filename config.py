@@ -1,14 +1,33 @@
 """
 Configuration file for Huawei Cloud services and application settings.
+Cloud-ready configuration with validation and sensible defaults.
 """
 import os
+import logging
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
+# Configure logging early
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL.upper(), logging.INFO),
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # ------------------ API Keys ------------------
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # For Huawei ModelArts DeepSeek integration
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+
+# ------------------ DeepSeek v3.1 API Configuration ------------------
+# DeepSeek API Configuration (OpenAI-compatible)
+# Option 1: Direct DeepSeek API (https://api.deepseek.com)
+# Option 2: Huawei ModelArts (via ModelArts endpoint)
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # DeepSeek API key
+DEEPSEEK_API_BASE = os.getenv("DEEPSEEK_API_BASE", "https://api.deepseek.com")  # DeepSeek API base URL
+DEEPSEEK_MODEL_NAME = os.getenv("DEEPSEEK_MODEL_NAME", "deepseek-chat")  # Model name: deepseek-chat or deepseek-v3.1
+DEEPSEEK_USE_DIRECT_API = os.getenv("DEEPSEEK_USE_DIRECT_API", "false").lower() == "true"  # Use direct API instead of ModelArts
 
 # ------------------ Milvus Configuration ------------------
 # For Milvus Cloud Cluster:
@@ -17,13 +36,19 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # For Huawei ModelArts Dee
 # MILVUS_API_KEY: API key/token from Milvus Cloud console
 # MILVUS_USER: Username (if using username/password auth)
 # MILVUS_PASSWORD: Password (if using username/password auth)
-MILVUS_HOST = os.getenv("MILVUS_HOST", "localhost")
-MILVUS_PORT = int(os.getenv("MILVUS_PORT", "19530"))  # Convert to int for serverless compatibility
+MILVUS_HOST = os.getenv("MILVUS_HOST", "")
+MILVUS_PORT = int(os.getenv("MILVUS_PORT", "443"))  # Default to 443 for cloud
 MILVUS_API_KEY = os.getenv("MILVUS_API_KEY", "")  # For Milvus Cloud authentication
 MILVUS_USER = os.getenv("MILVUS_USER", "")
 MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", "")
 MILVUS_COLLECTION_NAME = os.getenv("MILVUS_COLLECTION_NAME", "medical_knowledge_base")
-MILVUS_USE_CLOUD = os.getenv("MILVUS_USE_CLOUD", "false").lower() == "true"  # Set to true for cloud cluster
+MILVUS_USE_CLOUD = os.getenv("MILVUS_USE_CLOUD", "true").lower() == "true"  # Default to true for cloud deployment
+
+# Validate Milvus configuration
+if MILVUS_USE_CLOUD and not MILVUS_HOST:
+    logger.warning("MILVUS_USE_CLOUD is true but MILVUS_HOST is not set")
+if MILVUS_USE_CLOUD and not MILVUS_API_KEY and not (MILVUS_USER and MILVUS_PASSWORD):
+    logger.warning("MILVUS_USE_CLOUD is true but no authentication credentials provided")
 
 # ------------------ OBS (Object Storage Service) Configuration ------------------
 OBS_ACCESS_KEY = os.getenv("OBS_ACCESS_KEY", "")
@@ -31,7 +56,8 @@ OBS_SECRET_KEY = os.getenv("OBS_SECRET_KEY", "")
 OBS_ENDPOINT = os.getenv("OBS_ENDPOINT", "")
 OBS_BUCKET_NAME = os.getenv("OBS_BUCKET_NAME", "")
 
-# ------------------ ModelArts Configuration ------------------
+# ------------------ ModelArts Configuration (Huawei Cloud) ------------------
+# Huawei ModelArts endpoint for DeepSeek v3.1 (alternative to direct API)
 MODELARTS_ENDPOINT = os.getenv("MODELARTS_ENDPOINT", "")
 MODELARTS_PROJECT_ID = os.getenv("MODELARTS_PROJECT_ID", "")
 MODELARTS_MODEL_NAME = os.getenv("MODELARTS_MODEL_NAME", "deepseek-v3.1")
@@ -73,6 +99,16 @@ RDS_PASSWORD = os.getenv("RDS_PASSWORD", "")
 RDS_ENGINE = os.getenv("RDS_ENGINE", "postgresql")  # postgresql or mysql
 
 # ------------------ Application Configuration ------------------
-VECTORSTORE_DIR = os.getenv("VECTORSTORE_DIR", "./medical_vectorstore")
+# Use /tmp for cloud deployments (ephemeral storage)
+VECTORSTORE_DIR = os.getenv("VECTORSTORE_DIR", "/tmp/medical_vectorstore")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+# ------------------ Server Configuration ------------------
+# Streamlit server configuration for cloud deployment
+STREAMLIT_SERVER_PORT = int(os.getenv("STREAMLIT_SERVER_PORT", "8501"))
+STREAMLIT_SERVER_ADDRESS = os.getenv("STREAMLIT_SERVER_ADDRESS", "0.0.0.0")
+STREAMLIT_SERVER_HEADLESS = os.getenv("STREAMLIT_SERVER_HEADLESS", "true").lower() == "true"
+
+# Health check configuration
+HEALTH_CHECK_PORT = int(os.getenv("HEALTH_CHECK_PORT", "8080"))
 

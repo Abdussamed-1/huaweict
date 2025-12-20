@@ -1,23 +1,41 @@
-streamlit
-langchain-chroma
-langchain-huggingface
-langchain-google-genai
-langchain-core
-python-dotenv
-sentence-transformers
+# Core Framework
+streamlit>=1.28.0
+flask>=2.3.0
+
+# LangChain & LLM
+langchain-core>=0.1.0
+langchain-huggingface>=0.0.1
+langchain-google-genai>=0.0.6
+
+# Vector Database
 pymilvus>=2.3.0
-numpy
-datasets
-pandas
-scikit-learn
+
+# Embeddings
+sentence-transformers>=2.2.0
 torch>=2.0.0
-streamlit-audio-recorder
-openai-whisper
+
+# Cloud Services
 esdk-obs-python>=3.22.0
 requests>=2.31.0
-flask>=2.3.0
-sqlalchemy>=2.0.0
-openpyxl>=3.1.0
+
+# Database
 psycopg2-binary>=2.9.0
 pymysql>=1.1.0
+sqlalchemy>=2.0.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+datasets>=2.14.0
+
+# Configuration & Utilities
+python-dotenv>=1.0.0
+
+# Optional: Audio processing (comment out if not needed)
+# streamlit-audio-recorder
+# openai-whisper
+
+# Optional: Excel support (comment out if not needed)
+# openpyxl>=3.1.0
 

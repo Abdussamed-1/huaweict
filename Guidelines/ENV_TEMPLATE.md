@@ -27,8 +27,25 @@ cp ENV_TEMPLATE.md .env
 # Google Gemini API Key (fallback LLM)
 GOOGLE_API_KEY=your_google_api_key_here
 
-# DeepSeek API Key (for Huawei ModelArts)
+# ============================================
+# DeepSeek v3.1 API Configuration
+# ============================================
+# DeepSeek API Key (required for DeepSeek v3.1)
+# Get your API key from: https://platform.deepseek.com/api_keys
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
+
+# DeepSeek API Base URL (default: https://api.deepseek.com)
+# Use this for direct DeepSeek API access
+DEEPSEEK_API_BASE=https://api.deepseek.com
+
+# DeepSeek Model Name
+# Options: "deepseek-chat" (default) or "deepseek-v3.1"
+DEEPSEEK_MODEL_NAME=deepseek-chat
+
+# Use Direct DeepSeek API instead of Huawei ModelArts
+# Set to "true" to use direct DeepSeek API (https://api.deepseek.com)
+# Set to "false" to use Huawei ModelArts endpoint
+DEEPSEEK_USE_DIRECT_API=false
 
 # ============================================
 # Milvus Vector Database Configuration
@@ -67,9 +84,10 @@ OBS_ENDPOINT=obs.ap-southeast-1.myhuaweicloud.com
 OBS_BUCKET_NAME=medical-documents-prod
 
 # ============================================
-# ModelArts Configuration
+# ModelArts Configuration (Huawei Cloud)
 # ============================================
 # Huawei Cloud ModelArts endpoint for DeepSeek v3.1
+# Only required if DEEPSEEK_USE_DIRECT_API=false
 MODELARTS_ENDPOINT=https://modelarts.ap-southeast-1.myhuaweicloud.com
 MODELARTS_PROJECT_ID=your_project_id_here
 MODELARTS_MODEL_NAME=deepseek-v3.1
@@ -87,8 +105,9 @@ EMBEDDING_DEVICE=auto
 # ============================================
 # LLM Configuration
 # ============================================
-# LLM Model: "gemini-2.5-flash" or "deepseek-v3.1"
-LLM_MODEL=deepseek-v3.1
+# LLM Model: "gemini-2.5-flash" or "deepseek-chat" or "deepseek-v3.1"
+# Note: If using direct DeepSeek API, model name should match DEEPSEEK_MODEL_NAME
+LLM_MODEL=deepseek-chat
 LLM_TEMPERATURE=0.2
 LLM_MAX_TOKENS=2048
 
