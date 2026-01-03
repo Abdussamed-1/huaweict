@@ -1,6 +1,6 @@
 """
 Context Integration Module
-Integrates context from Milvus Vector & Graph DB, RDS Relational DB, and OBS storage.
+Integrates context from Milvus Vector & Graph DB and OBS storage.
 Part of the Data & Memory Layer (Access Layer).
 """
 import logging
@@ -12,13 +12,6 @@ try:
 except ImportError:
     MILVUS_AVAILABLE = False
     logging.warning("pymilvus not available. Milvus features will be disabled.")
-
-try:
-    from rds_client import RDSClient
-    RDS_AVAILABLE = True
-except ImportError:
-    RDS_AVAILABLE = False
-    logging.warning("rds_client not available. RDS features will be disabled.")
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +27,10 @@ class ContextIntegrator:
         milvus_api_key: str = None,
         milvus_user: str = None,
         milvus_password: str = None,
-        use_cloud: bool = False,
-        use_rds: bool = True
+        use_cloud: bool = False
     ):
         """
-        Initialize context integrator with Milvus and RDS connections.
+        Initialize context integrator with Milvus connection.
         
         Args:
             milvus_host: Milvus server host (or cloud endpoint)
@@ -48,7 +40,6 @@ class ContextIntegrator:
             milvus_user: Username for authentication (if using username/password)
             milvus_password: Password for authentication (if using username/password)
             use_cloud: Whether using Milvus Cloud cluster
-            use_rds: Whether to use RDS for enhanced metadata (default: True)
         """
         self.milvus_host = milvus_host
         self.milvus_port = milvus_port
@@ -58,18 +49,6 @@ class ContextIntegrator:
         self.milvus_password = milvus_password
         self.use_cloud = use_cloud
         self.collection = None
-        self.use_rds = use_rds
-        
-        # Initialize RDS client if available
-        self.rds_client = None
-        if use_rds and RDS_AVAILABLE:
-            try:
-                self.rds_client = RDSClient()
-                if self.rds_client.conn:
-                    logger.info("✅ RDS client initialized")
-            except Exception as e:
-                logger.warning(f"RDS client initialization failed: {e}")
-                self.rds_client = None
         
         self._connect()
     
@@ -131,18 +110,15 @@ class ContextIntegrator:
         self,
         query_embedding: List[float],
         top_k: int = 5,
-        max_depth: int = 2,
-        enrich_with_rds: bool = True
+        max_depth: int = 2
     ) -> Dict:
         """
         Retrieve context using GraphRAG approach - PRIMARY METHOD.
-        Optionally enriches results with RDS metadata.
         
         Args:
             query_embedding: Query vector embedding
             top_k: Number of top initial results to retrieve
             max_depth: Maximum depth for graph traversal
-            enrich_with_rds: Whether to enrich results with RDS metadata
             
         Returns:
             Dictionary containing retrieved Q&A pairs and graph context
@@ -179,14 +155,6 @@ class ContextIntegrator:
                         "similarity": 1 - hit.distance,  # Convert distance to similarity
                         "metadata": hit.entity.get("metadata", {})
                     }
-                    
-                    # Enrich with RDS metadata if available
-                    if enrich_with_rds and self.rds_client:
-                        rds_metadata = self.rds_client.get_metadata(hit.id)
-                        if rds_metadata:
-                            node_data["rds_metadata"] = dict(rds_metadata)
-                            node_data["category"] = rds_metadata.get("category")
-                            node_data["source"] = rds_metadata.get("source")
                     
                     initial_nodes.append(node_data)
                     initial_node_ids.append(hit.id)

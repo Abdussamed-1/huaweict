@@ -49,7 +49,6 @@ nano .env
 # Aşağıdaki değişkenleri doldur:
 # - DEEPSEEK_API_KEY
 # - MILVUS_HOST, MILVUS_API_KEY
-# - RDS_HOST, RDS_USER, RDS_PASSWORD (opsiyonel)
 # - OBS_ACCESS_KEY, OBS_SECRET_KEY (opsiyonel)
 ```
 
@@ -117,7 +116,7 @@ Security group'da bu portları açın:
 
 Health check endpoint'leri:
 
-- `GET /health` - Kapsamlı health check (Milvus, RDS kontrolü)
+- `GET /health` - Kapsamlı health check (Milvus kontrolü)
 - `GET /health/liveness` - Liveness probe
 - `GET /health/readiness` - Readiness probe
 

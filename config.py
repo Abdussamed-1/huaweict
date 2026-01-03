@@ -90,14 +90,6 @@ AGENTIC_RAG_ENABLED = os.getenv("AGENTIC_RAG_ENABLED", "true").lower() == "true"
 AGENT_MAX_ITERATIONS = int(os.getenv("AGENT_MAX_ITERATIONS", "5"))
 AGENT_REASONING_ENABLED = os.getenv("AGENT_REASONING_ENABLED", "true").lower() == "true"
 
-# ------------------ RDS (Relational Database) Configuration ------------------
-RDS_HOST = os.getenv("RDS_HOST", "")
-RDS_PORT = os.getenv("RDS_PORT", "5432")
-RDS_DB = os.getenv("RDS_DB", "medical_db")
-RDS_USER = os.getenv("RDS_USER", "")
-RDS_PASSWORD = os.getenv("RDS_PASSWORD", "")
-RDS_ENGINE = os.getenv("RDS_ENGINE", "postgresql")  # postgresql or mysql
-
 # ------------------ Application Configuration ------------------
 # Use /tmp for cloud deployments (ephemeral storage)
 VECTORSTORE_DIR = os.getenv("VECTORSTORE_DIR", "/tmp/medical_vectorstore")

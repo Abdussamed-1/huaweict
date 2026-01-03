@@ -1,7 +1,7 @@
 """
 Health Check Endpoint for ELB
 Runs on a separate port (8080) for load balancer health checks.
-Includes dependency checks for Milvus and RDS.
+Includes dependency checks for Milvus.
 """
 from flask import Flask, jsonify
 from datetime import datetime
@@ -12,15 +12,13 @@ import os
 try:
     from config import (
         MILVUS_HOST, MILVUS_PORT, MILVUS_USE_CLOUD,
-        RDS_HOST, RDS_PORT, HEALTH_CHECK_PORT
+        HEALTH_CHECK_PORT
     )
 except ImportError:
     # Fallback if config import fails
     MILVUS_HOST = os.getenv("MILVUS_HOST", "")
     MILVUS_PORT = int(os.getenv("MILVUS_PORT", "443"))
     MILVUS_USE_CLOUD = os.getenv("MILVUS_USE_CLOUD", "true").lower() == "true"
-    RDS_HOST = os.getenv("RDS_HOST", "")
-    RDS_PORT = os.getenv("RDS_PORT", "5432")
     HEALTH_CHECK_PORT = int(os.getenv("HEALTH_CHECK_PORT", "8080"))
 
 # Configure logging
@@ -52,26 +50,6 @@ def check_milvus():
         logger.warning(f"Milvus health check failed: {e}")
         return {"status": "unhealthy", "error": str(e)}
 
-def check_rds():
-    """Check RDS connection."""
-    if not RDS_HOST:
-        return {"status": "skipped", "reason": "RDS not configured"}
-    
-    try:
-        import psycopg2
-        conn = psycopg2.connect(
-            host=RDS_HOST,
-            port=int(RDS_PORT),
-            connect_timeout=2
-        )
-        conn.close()
-        return {"status": "healthy"}
-    except ImportError:
-        return {"status": "skipped", "reason": "psycopg2 not available"}
-    except Exception as e:
-        logger.warning(f"RDS health check failed: {e}")
-        return {"status": "unhealthy", "error": str(e)}
-
 @app.route('/health')
 def health_check():
     """Comprehensive health check endpoint for ELB."""
@@ -82,8 +60,7 @@ def health_check():
             "timestamp": datetime.now().isoformat(),
             "checks": {
                 "application": {"status": "healthy"},
-                "milvus": check_milvus(),
-                "rds": check_rds()
+                "milvus": check_milvus()
             }
         }
         

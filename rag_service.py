@@ -50,7 +50,7 @@ class RAGService:
         # Initialize components
         self.input_processor = InputProcessor()
         from config import MILVUS_API_KEY, MILVUS_USER, MILVUS_PASSWORD, MILVUS_USE_CLOUD
-        # Initialize context integrator with RDS support (if RDS configured)
+        # Initialize context integrator with Milvus Cloud
         self.context_integrator = ContextIntegrator(
             milvus_host=MILVUS_HOST,
             milvus_port=MILVUS_PORT,
@@ -58,8 +58,7 @@ class RAGService:
             milvus_api_key=MILVUS_API_KEY,
             milvus_user=MILVUS_USER,
             milvus_password=MILVUS_PASSWORD,
-            use_cloud=MILVUS_USE_CLOUD,
-            use_rds=True  # Enable RDS enrichment if available
+            use_cloud=MILVUS_USE_CLOUD
         )
         self.agentic_orchestrator = AgenticOrchestrator(
             max_iterations=AGENT_MAX_ITERATIONS,

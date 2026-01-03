@@ -18,11 +18,6 @@ torch>=2.0.0
 esdk-obs-python>=3.22.0
 requests>=2.31.0
 
-# Database
-psycopg2-binary>=2.9.0
-pymysql>=1.1.0
-sqlalchemy>=2.0.0
-
 # Data Processing
 numpy>=1.24.0
 pandas>=2.0.0
