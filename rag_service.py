@@ -11,7 +11,7 @@ from config import (
     EMBEDDING_MODEL_NAME, LLM_MODEL, LLM_TEMPERATURE,
     RETRIEVAL_TOP_K, GRAPH_RAG_ENABLED, AGENTIC_RAG_ENABLED,
     AGENT_MAX_ITERATIONS, AGENT_REASONING_ENABLED, GRAPH_MAX_DEPTH,
-    DEEPSEEK_MODEL_NAME
+    DEEPSEEK_MODEL_NAME, QWEN_ENABLED
 )
 from input_processing import InputProcessor
 from agentic_orchestrator import AgenticOrchestrator
@@ -194,28 +194,45 @@ Respond only with the three paragraphs described. Do not add any extra sections 
             # Step 6: Generate Response
             logger.info("Step 6: Generating Response")
             
-            # Try DeepSeek API first (direct or ModelArts), fallback to Gemini
+            # Try DeepSeek/Qwen API first (direct or ModelArts), fallback to Gemini
             response_text = None
             llm_used = "unknown"
             
-            # Check if DeepSeek should be used (supports multiple model names)
-            deepseek_models = ["deepseek-chat", "deepseek-v3.1", "deepseek-v3"]
-            use_deepseek = self.modelarts_client.is_available() and (
-                LLM_MODEL.lower() in deepseek_models or 
-                LLM_MODEL.lower().startswith("deepseek")
-            )
+            # Check available models
+            available_models = self.modelarts_client.get_available_models()
+            logger.info(f"Available LLM models: {[m['name'] for m in available_models]}")
             
-            # Try DeepSeek API (direct or ModelArts)
-            if use_deepseek:
-                logger.info(f"Using DeepSeek API: {LLM_MODEL}")
+            # Check if Qwen should be used as primary (when QWEN_ENABLED=true)
+            if QWEN_ENABLED and self.modelarts_client.is_qwen_available():
+                logger.info(f"Using Qwen3-32B as primary model")
                 full_prompt = self.prompt_template.format(
                     context=integrated_context,
                     question=user_query
                 )
-                api_response = self.modelarts_client.invoke_deepseek(full_prompt)
+                api_response = self.modelarts_client.invoke_qwen(full_prompt)
                 if api_response:
                     response_text = self.modelarts_client.extract_response_text(api_response)
-                    llm_used = LLM_MODEL.lower()
+                    llm_used = "qwen3-32b"
+            
+            # Check if DeepSeek should be used (supports multiple model names)
+            if not response_text:
+                deepseek_models = ["deepseek-chat", "deepseek-v3.1", "deepseek-v3"]
+                use_deepseek = self.modelarts_client.is_available() and (
+                    LLM_MODEL.lower() in deepseek_models or 
+                    LLM_MODEL.lower().startswith("deepseek")
+                )
+                
+                # Try DeepSeek API (direct or ModelArts) - includes Qwen fallback if configured
+                if use_deepseek:
+                    logger.info(f"Using DeepSeek API: {LLM_MODEL}")
+                    full_prompt = self.prompt_template.format(
+                        context=integrated_context,
+                        question=user_query
+                    )
+                    api_response = self.modelarts_client.invoke_deepseek(full_prompt)
+                    if api_response:
+                        response_text = self.modelarts_client.extract_response_text(api_response)
+                        llm_used = LLM_MODEL.lower()
             
             # Fallback to Gemini if ModelArts failed or not configured
             if not response_text and self.llm_gemini:

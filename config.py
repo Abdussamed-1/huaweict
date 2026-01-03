@@ -57,10 +57,21 @@ OBS_ENDPOINT = os.getenv("OBS_ENDPOINT", "")
 OBS_BUCKET_NAME = os.getenv("OBS_BUCKET_NAME", "")
 
 # ------------------ ModelArts Configuration (Huawei Cloud) ------------------
-# Huawei ModelArts endpoint for DeepSeek v3.1 (alternative to direct API)
-MODELARTS_ENDPOINT = os.getenv("MODELARTS_ENDPOINT", "")
+# Huawei ModelArts endpoint for LLM inference
+# Both DeepSeek-v3.1 and Qwen3-32B use the SAME endpoint and API key
+# Only the model name changes in the request body
+MODELARTS_ENDPOINT = os.getenv("MODELARTS_ENDPOINT", "https://api-ap-southeast-1.modelarts-maas.com")
 MODELARTS_PROJECT_ID = os.getenv("MODELARTS_PROJECT_ID", "")
-MODELARTS_MODEL_NAME = os.getenv("MODELARTS_MODEL_NAME", "deepseek-v3.1")
+MODELARTS_MODEL_NAME = os.getenv("MODELARTS_MODEL_NAME", "deepseek-v3.1")  # deepseek-v3.1 or qwen3-32b
+
+# ------------------ Model Selection ------------------
+# Available models via Huawei ModelArts (same endpoint, same API key):
+#   - deepseek-v3.1 (default)
+#   - qwen3-32b
+# Set QWEN_ENABLED=true to use Qwen3-32B as primary model instead of DeepSeek
+QWEN_ENABLED = os.getenv("QWEN_ENABLED", "false").lower() == "true"
+QWEN_MODEL_NAME = os.getenv("QWEN_MODEL_NAME", "qwen3-32b")  # Qwen model name
+QWEN_USE_AS_FALLBACK = os.getenv("QWEN_USE_AS_FALLBACK", "true").lower() == "true"  # Use as fallback when primary fails
 
 # ------------------ Embedding Configuration ------------------
 # Using all-mpnet-base-v2 for better medical text understanding (768 dimensions)

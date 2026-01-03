@@ -1,7 +1,7 @@
 """
 Health Check Endpoint for ELB
 Runs on a separate port (8080) for load balancer health checks.
-Includes dependency checks for Milvus.
+Includes dependency checks for Milvus and LLM services.
 """
 from flask import Flask, jsonify
 from datetime import datetime
@@ -12,7 +12,7 @@ import os
 try:
     from config import (
         MILVUS_HOST, MILVUS_PORT, MILVUS_USE_CLOUD,
-        HEALTH_CHECK_PORT
+        HEALTH_CHECK_PORT, QWEN_ENABLED
     )
 except ImportError:
     # Fallback if config import fails
@@ -20,6 +20,7 @@ except ImportError:
     MILVUS_PORT = int(os.getenv("MILVUS_PORT", "443"))
     MILVUS_USE_CLOUD = os.getenv("MILVUS_USE_CLOUD", "true").lower() == "true"
     HEALTH_CHECK_PORT = int(os.getenv("HEALTH_CHECK_PORT", "8080"))
+    QWEN_ENABLED = os.getenv("QWEN_ENABLED", "false").lower() == "true"
 
 # Configure logging
 logging.basicConfig(
@@ -50,6 +51,26 @@ def check_milvus():
         logger.warning(f"Milvus health check failed: {e}")
         return {"status": "unhealthy", "error": str(e)}
 
+def check_llm():
+    """Check LLM API availability."""
+    try:
+        from modelarts_client import ModelArtsClient
+        client = ModelArtsClient()
+        models = client.get_available_models()
+        
+        if not models:
+            return {"status": "unhealthy", "reason": "No LLM models available"}
+        
+        return {
+            "status": "healthy",
+            "models": [m["name"] for m in models],
+            "primary": models[0]["name"] if models else None,
+            "qwen_enabled": QWEN_ENABLED
+        }
+    except Exception as e:
+        logger.warning(f"LLM health check failed: {e}")
+        return {"status": "unhealthy", "error": str(e)}
+
 @app.route('/health')
 def health_check():
     """Comprehensive health check endpoint for ELB."""
@@ -60,7 +81,8 @@ def health_check():
             "timestamp": datetime.now().isoformat(),
             "checks": {
                 "application": {"status": "healthy"},
-                "milvus": check_milvus()
+                "milvus": check_milvus(),
+                "llm": check_llm()
             }
         }
         
