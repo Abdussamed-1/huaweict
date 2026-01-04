@@ -12,9 +12,7 @@ pymilvus>=2.3.0
 
 # Embeddings
 sentence-transformers>=2.2.0
-# PyTorch CPU-only (no CUDA)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch>=2.0.0
+# PyTorch will be installed separately (CPU-only)
 
 # Cloud Services
 esdk-obs-python>=3.22.0
