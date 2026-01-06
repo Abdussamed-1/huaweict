@@ -223,9 +223,6 @@ MILVUS_API_KEY=your-milvus-api-key
 MILVUS_COLLECTION_NAME=medical_knowledge_base
 MILVUS_USE_CLOUD=true
 
-# ------------------ Google Gemini (Optional - Fallback) ------------------
-# GOOGLE_API_KEY=your-google-api-key
-
 # ------------------ ModelArts (Optional - Qwen3-32B) ------------------
 # MODELARTS_ENDPOINT=https://your-modelarts-endpoint
 # MODELARTS_PROJECT_ID=your-project-id

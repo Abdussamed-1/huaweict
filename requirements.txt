@@ -5,7 +5,6 @@ flask>=2.3.0
 # LangChain & LLM
 langchain-core>=0.1.0
 langchain-huggingface>=0.0.1
-langchain-google-genai>=0.0.6
 
 # Vector Database
 pymilvus>=2.3.0

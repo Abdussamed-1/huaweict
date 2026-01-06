@@ -20,11 +20,9 @@ from modelarts_client import ModelArtsClient
 
 # LLM imports
 try:
-    from langchain_google_genai import ChatGoogleGenerativeAI
     from langchain_huggingface import HuggingFaceEmbeddings
-    from langchain_core.prompts import ChatPromptTemplate
 except ImportError:
-    logging.warning("LangChain imports not available. Some features may not work.")
+    logging.warning("LangChain HuggingFace imports not available. Embeddings may not work.")
 
 # Use centralized logging config if available
 try:
@@ -72,22 +70,8 @@ class RAGService:
             logger.error(f"Error initializing embedding model: {str(e)}")
             self.embedding_model = None
         
-        # Initialize LLM - Try ModelArts DeepSeek first, fallback to Gemini
+        # Initialize LLM - DeepSeek/Qwen via ModelArts
         self.modelarts_client = ModelArtsClient()
-        self.llm_gemini = None
-        
-        # Initialize Gemini as fallback
-        try:
-            from config import GOOGLE_API_KEY
-            if GOOGLE_API_KEY:
-                self.llm_gemini = ChatGoogleGenerativeAI(
-                    model="gemini-2.5-flash",
-                    temperature=LLM_TEMPERATURE,
-                    google_api_key=GOOGLE_API_KEY
-                )
-                logger.info("✅ Gemini LLM initialized as fallback")
-        except Exception as e:
-            logger.warning(f"Gemini LLM not available: {str(e)}")
         
         # Initialize prompt template
         self.prompt_template = self._create_prompt_template()
@@ -161,14 +145,10 @@ Respond only with the three paragraphs described. Do not add any extra sections 
                 )
                 
                 # Execute with reasoning
-                # Use Gemini LLM for agentic orchestrator if available
-                llm_for_agent = self.llm_gemini if self.llm_gemini else None
-                if not llm_for_agent:
-                    logger.warning("No LLM available for agentic orchestrator")
                 execution_result = self.agentic_orchestrator.execute_with_reasoning(
                     plan,
                     self.context_integrator,
-                    llm_for_agent
+                    None  # LLM handled by ModelArts client
                 )
                 
                 # Use orchestrated context
@@ -194,7 +174,7 @@ Respond only with the three paragraphs described. Do not add any extra sections 
             # Step 6: Generate Response
             logger.info("Step 6: Generating Response")
             
-            # Try DeepSeek/Qwen API first (direct or ModelArts), fallback to Gemini
+            # Try DeepSeek/Qwen API via ModelArts or direct API
             response_text = None
             llm_used = "unknown"
             
@@ -234,26 +214,10 @@ Respond only with the three paragraphs described. Do not add any extra sections 
                         response_text = self.modelarts_client.extract_response_text(api_response)
                         llm_used = LLM_MODEL.lower()
             
-            # Fallback to Gemini if ModelArts failed or not configured
-            if not response_text and self.llm_gemini:
-                logger.info("Falling back to Google Gemini")
-                try:
-                    from langchain_core.prompts import ChatPromptTemplate
-                    prompt = ChatPromptTemplate.from_template(self.prompt_template)
-                    chain = prompt | self.llm_gemini
-                    response = chain.invoke({
-                        "question": user_query,
-                        "context": integrated_context
-                    })
-                    response_text = response.content if hasattr(response, 'content') else str(response)
-                    llm_used = "gemini-2.5-flash"
-                except Exception as e:
-                    logger.error(f"Gemini fallback failed: {e}")
-            
             # If still no response, return error
             if not response_text:
                 return {
-                    "response": "[Error] No LLM available. Please configure ModelArts or Gemini API key.",
+                    "response": "[Error] No LLM available. Please configure DEEPSEEK_API_KEY in .env file.",
                     "sources": [],
                     "context": integrated_context,
                     "metadata": processed_input
