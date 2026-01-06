@@ -17,9 +17,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ------------------ API Keys ------------------
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
-
 # ------------------ DeepSeek v3.1 API Configuration ------------------
 # DeepSeek API Configuration (OpenAI-compatible)
 # Option 1: Direct DeepSeek API (https://api.deepseek.com)
@@ -82,7 +79,7 @@ EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "768"))
 EMBEDDING_DEVICE = os.getenv("EMBEDDING_DEVICE", "auto")  # auto, cuda, cpu
 
 # ------------------ LLM Configuration ------------------
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")  # Can be switched to DeepSeek v3.1
+LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")  # DeepSeek or Qwen via ModelArts
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.2"))
 LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "2048"))
 
