@@ -25,22 +25,22 @@ HUAWEI_CSS = """
     /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     
-    /* Root Variables - Huawei Theme */
+    /* Root Variables - Huawei Theme - Enhanced Visibility */
     :root {
         --huawei-red: #C7000B;
         --huawei-red-dark: #9A0008;
-        --huawei-red-light: #FF1744;
+        --huawei-red-light: #FF4757;
         --huawei-gradient: linear-gradient(135deg, #C7000B 0%, #FF1744 50%, #C7000B 100%);
         --bg-dark: #0D0D0D;
         --bg-card: #1A1A1A;
         --bg-card-hover: #242424;
         --text-primary: #FFFFFF;
-        --text-secondary: #B0B0B0;
-        --text-muted: #6B6B6B;
-        --border-color: #2D2D2D;
-        --success: #00C853;
-        --warning: #FFD600;
-        --info: #00B0FF;
+        --text-secondary: #D0D0D0;
+        --text-muted: #8A8A8A;
+        --border-color: #3D3D3D;
+        --success: #00E676;
+        --warning: #FFEA00;
+        --info: #40C4FF;
     }
     
     /* Global Styles */
@@ -54,6 +54,50 @@ HUAWEI_CSS = """
     .stApp {
         background: #0D0D0D !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* ALL TEXT VISIBILITY FIX */
+    .stApp, .stApp p, .stApp span, .stApp div, .stApp label,
+    .stMarkdown, .stMarkdown p, .stMarkdown span,
+    [data-testid="stMarkdownContainer"], 
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] span,
+    [data-testid="stMarkdownContainer"] li,
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4,
+    [data-testid="stText"] {
+        color: #FFFFFF !important;
+    }
+    
+    /* Expander text fix */
+    .streamlit-expanderHeader, 
+    .streamlit-expanderHeader p,
+    .streamlit-expanderHeader span,
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] summary span,
+    [data-testid="stExpander"] summary p {
+        color: #FFFFFF !important;
+    }
+    
+    .streamlit-expanderContent,
+    .streamlit-expanderContent p,
+    .streamlit-expanderContent span,
+    .streamlit-expanderContent div {
+        color: #E0E0E0 !important;
+    }
+    
+    /* Metric text fix */
+    [data-testid="stMetricValue"],
+    [data-testid="stMetricLabel"],
+    .stMetric label,
+    .stMetric [data-testid="stMetricValue"] {
+        color: #FFFFFF !important;
+    }
+    
+    [data-testid="stMetricLabel"] {
+        color: #B0B0B0 !important;
     }
     
     /* Hide Streamlit Elements */
@@ -70,11 +114,23 @@ HUAWEI_CSS = """
         background-color: transparent !important;
     }
     
-    /* Main Container */
+    /* Main Container - RESPONSIVE */
     .main .block-container {
-        padding: 2rem 3rem;
+        padding: 2rem 1rem;
         max-width: 1200px;
         background: transparent !important;
+    }
+    
+    @media (min-width: 768px) {
+        .main .block-container {
+            padding: 2rem 2rem;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .main .block-container {
+            padding: 2rem 3rem;
+        }
     }
     
     .main {
@@ -87,11 +143,18 @@ HUAWEI_CSS = """
         border-right: 1px solid var(--border-color);
     }
     
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] div {
+        color: #E0E0E0 !important;
+    }
+    
     [data-testid="stSidebar"] .stButton > button {
         width: 100%;
         background: transparent;
         border: 1px solid var(--border-color);
-        color: var(--text-secondary);
+        color: #E0E0E0 !important;
         padding: 0.75rem 1rem;
         border-radius: 12px;
         font-weight: 500;
@@ -102,20 +165,28 @@ HUAWEI_CSS = """
     [data-testid="stSidebar"] .stButton > button:hover {
         background: var(--huawei-red);
         border-color: var(--huawei-red);
-        color: white;
+        color: white !important;
         transform: translateX(5px);
     }
     
-    /* Custom Header */
+    /* Custom Header - RESPONSIVE */
     .huawei-header {
         background: var(--huawei-gradient);
-        padding: 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
+        padding: 1.5rem 1rem;
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
         text-align: center;
         position: relative;
         overflow: hidden;
         box-shadow: 0 10px 40px rgba(199, 0, 11, 0.3);
+    }
+    
+    @media (min-width: 768px) {
+        .huawei-header {
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
     }
     
     .huawei-header::before {
@@ -135,8 +206,8 @@ HUAWEI_CSS = """
     }
     
     .huawei-header h1 {
-        color: white;
-        font-size: 2.5rem;
+        color: white !important;
+        font-size: 1.75rem;
         font-weight: 700;
         margin: 0;
         position: relative;
@@ -144,22 +215,43 @@ HUAWEI_CSS = """
         text-shadow: 0 2px 10px rgba(0,0,0,0.3);
     }
     
+    @media (min-width: 768px) {
+        .huawei-header h1 {
+            font-size: 2.5rem;
+        }
+    }
+    
     .huawei-header p {
-        color: rgba(255,255,255,0.9);
-        font-size: 1.1rem;
+        color: rgba(255,255,255,0.95) !important;
+        font-size: 0.95rem;
         margin-top: 0.5rem;
         position: relative;
         z-index: 1;
     }
     
-    /* Feature Cards */
+    @media (min-width: 768px) {
+        .huawei-header p {
+            font-size: 1.1rem;
+        }
+    }
+    
+    /* Feature Cards - RESPONSIVE */
     .feature-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 1.5rem;
+        border-radius: 12px;
+        padding: 1.25rem;
         margin-bottom: 1rem;
         transition: all 0.3s ease;
+        min-height: auto;
+    }
+    
+    @media (min-width: 768px) {
+        .feature-card {
+            padding: 1.5rem;
+            border-radius: 16px;
+            min-height: 180px;
+        }
     }
     
     .feature-card:hover {
@@ -169,40 +261,74 @@ HUAWEI_CSS = """
     }
     
     .feature-icon {
-        font-size: 2rem;
+        font-size: 1.75rem;
         margin-bottom: 0.5rem;
     }
     
+    @media (min-width: 768px) {
+        .feature-icon {
+            font-size: 2rem;
+        }
+    }
+    
     .feature-title {
-        color: var(--text-primary);
-        font-size: 1.1rem;
+        color: #FFFFFF !important;
+        font-size: 1rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
     }
     
-    .feature-desc {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        line-height: 1.5;
+    @media (min-width: 768px) {
+        .feature-title {
+            font-size: 1.1rem;
+        }
     }
     
-    /* Architecture Diagram */
+    .feature-desc {
+        color: #D0D0D0 !important;
+        font-size: 0.85rem;
+        line-height: 1.6;
+    }
+    
+    @media (min-width: 768px) {
+        .feature-desc {
+            font-size: 0.9rem;
+        }
+    }
+    
+    /* Architecture Diagram - RESPONSIVE */
     .arch-container {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-radius: 20px;
-        padding: 2rem;
-        margin: 2rem 0;
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+    }
+    
+    @media (min-width: 768px) {
+        .arch-container {
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
     }
     
     .arch-layer {
         background: linear-gradient(90deg, var(--bg-card-hover) 0%, var(--bg-card) 100%);
         border: 1px solid var(--border-color);
         border-left: 4px solid var(--huawei-red);
-        border-radius: 12px;
-        padding: 1rem 1.5rem;
-        margin: 0.75rem 0;
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        margin: 0.5rem 0;
         transition: all 0.3s ease;
+    }
+    
+    @media (min-width: 768px) {
+        .arch-layer {
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin: 0.75rem 0;
+        }
     }
     
     .arch-layer:hover {
@@ -211,33 +337,56 @@ HUAWEI_CSS = """
     }
     
     .arch-layer-title {
-        color: var(--huawei-red-light);
+        color: #FF6B7A !important;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
     
+    @media (min-width: 768px) {
+        .arch-layer-title {
+            font-size: 0.9rem;
+        }
+    }
+    
     .arch-layer-content {
-        color: var(--text-primary);
-        font-size: 1rem;
+        color: #FFFFFF !important;
+        font-size: 0.9rem;
         margin-top: 0.25rem;
     }
     
-    /* Chat Messages */
+    @media (min-width: 768px) {
+        .arch-layer-content {
+            font-size: 1rem;
+        }
+    }
+    
+    /* Chat Messages - ENHANCED VISIBILITY */
     .stChatMessage {
         background: var(--bg-card) !important;
         border: 1px solid var(--border-color) !important;
-        border-radius: 16px !important;
-        padding: 1rem !important;
-        margin-bottom: 1rem !important;
+        border-radius: 12px !important;
+        padding: 0.85rem !important;
+        margin-bottom: 0.85rem !important;
     }
     
-    [data-testid="stChatMessageContent"] {
-        color: var(--text-primary) !important;
+    @media (min-width: 768px) {
+        .stChatMessage {
+            border-radius: 16px !important;
+            padding: 1rem !important;
+            margin-bottom: 1rem !important;
+        }
     }
     
-    /* Chat Input - Premium Design */
+    [data-testid="stChatMessageContent"],
+    [data-testid="stChatMessageContent"] p,
+    [data-testid="stChatMessageContent"] span,
+    [data-testid="stChatMessageContent"] div {
+        color: #FFFFFF !important;
+    }
+    
+    /* Chat Input - Premium Design - RESPONSIVE */
     [data-testid="stChatInput"],
     [data-testid="stChatInput"] > div,
     [data-testid="stChatInput"] * {
@@ -251,35 +400,53 @@ HUAWEI_CSS = """
         right: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        padding: 1.5rem calc(50% - 400px) 2rem calc(50% - 400px) !important;
+        padding: 1rem !important;
         background: linear-gradient(to top, #0D0D0D 0%, #0D0D0D 80%, transparent 100%) !important;
         z-index: 999 !important;
         margin-left: 0 !important;
         transform: none !important;
     }
     
-    /* Sidebar açıkken ayarla */
+    @media (min-width: 576px) {
+        [data-testid="stChatInput"] {
+            padding: 1.25rem 2rem 1.5rem 2rem !important;
+        }
+    }
+    
     @media (min-width: 768px) {
         [data-testid="stChatInput"] {
-            padding-left: calc(50% - 350px + 8rem) !important;
-            padding-right: calc(50% - 350px) !important;
+            padding: 1.5rem calc(50% - 350px + 8rem) 2rem calc(50% - 350px) !important;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        [data-testid="stChatInput"] {
+            padding: 1.5rem calc(50% - 400px + 10rem) 2rem calc(50% - 400px) !important;
         }
     }
     
     [data-testid="stChatInput"] > div {
         background: linear-gradient(135deg, #1A1A1A 0%, #242424 100%) !important;
-        border: 2px solid #3D3D3D !important;
-        border-radius: 28px !important;
-        padding: 0.35rem 0.5rem !important;
+        border: 2px solid #4D4D4D !important;
+        border-radius: 20px !important;
+        padding: 0.25rem 0.4rem !important;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 
                     0 0 0 1px rgba(255, 255, 255, 0.05) inset !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        max-width: 800px !important;
+        max-width: 100% !important;
         margin: 0 auto !important;
     }
     
+    @media (min-width: 768px) {
+        [data-testid="stChatInput"] > div {
+            border-radius: 28px !important;
+            padding: 0.35rem 0.5rem !important;
+            max-width: 800px !important;
+        }
+    }
+    
     [data-testid="stChatInput"] > div:hover {
-        border-color: #505050 !important;
+        border-color: #606060 !important;
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6),
                     0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
     }
@@ -301,35 +468,54 @@ HUAWEI_CSS = """
     
     [data-testid="stChatInput"] textarea {
         color: #FFFFFF !important;
-        font-size: 1rem !important;
+        font-size: 0.95rem !important;
         font-family: 'Inter', sans-serif !important;
-        padding: 0.85rem 1.25rem !important;
+        padding: 0.75rem 1rem !important;
         background: transparent !important;
         line-height: 1.5 !important;
         border: none !important;
         caret-color: #C7000B !important;
     }
     
+    @media (min-width: 768px) {
+        [data-testid="stChatInput"] textarea {
+            font-size: 1rem !important;
+            padding: 0.85rem 1.25rem !important;
+        }
+    }
+    
     [data-testid="stChatInput"] textarea::placeholder {
-        color: #666666 !important;
+        color: #888888 !important;
         font-style: normal !important;
         opacity: 1 !important;
     }
     
-    /* Send Button */
+    /* Send Button - RESPONSIVE */
     [data-testid="stChatInput"] button[kind="primary"],
     [data-testid="stChatInput"] button[data-testid="stChatInputSubmitButton"],
     [data-testid="stChatInput"] button {
         background: linear-gradient(135deg, #C7000B 0%, #E81123 50%, #FF1744 100%) !important;
         border: none !important;
-        border-radius: 20px !important;
-        min-width: 48px !important;
-        width: 48px !important;
-        height: 48px !important;
-        margin: 0.15rem 0.25rem !important;
+        border-radius: 16px !important;
+        min-width: 42px !important;
+        width: 42px !important;
+        height: 42px !important;
+        margin: 0.15rem 0.2rem !important;
         transition: all 0.25s ease !important;
         box-shadow: 0 4px 20px rgba(199, 0, 11, 0.5) !important;
         cursor: pointer !important;
+    }
+    
+    @media (min-width: 768px) {
+        [data-testid="stChatInput"] button[kind="primary"],
+        [data-testid="stChatInput"] button[data-testid="stChatInputSubmitButton"],
+        [data-testid="stChatInput"] button {
+            border-radius: 20px !important;
+            min-width: 48px !important;
+            width: 48px !important;
+            height: 48px !important;
+            margin: 0.15rem 0.25rem !important;
+        }
     }
     
     [data-testid="stChatInput"] button:hover {
@@ -345,8 +531,15 @@ HUAWEI_CSS = """
     
     [data-testid="stChatInput"] button svg {
         fill: white !important;
-        width: 22px !important;
-        height: 22px !important;
+        width: 20px !important;
+        height: 20px !important;
+    }
+    
+    @media (min-width: 768px) {
+        [data-testid="stChatInput"] button svg {
+            width: 22px !important;
+            height: 22px !important;
+        }
     }
     
     /* Bottom bar gradient overlay için */
@@ -361,17 +554,23 @@ HUAWEI_CSS = """
         box-shadow: none !important;
     }
     
-    /* Add padding at bottom for fixed input */
+    /* Add padding at bottom for fixed input - RESPONSIVE */
     .main .block-container {
-        padding-bottom: 140px !important;
+        padding-bottom: 100px !important;
     }
     
-    /* Expander Styling */
+    @media (min-width: 768px) {
+        .main .block-container {
+            padding-bottom: 140px !important;
+        }
+    }
+    
+    /* Expander Styling - ENHANCED VISIBILITY */
     .streamlit-expanderHeader {
         background: var(--bg-card) !important;
         border: 1px solid var(--border-color) !important;
         border-radius: 12px !important;
-        color: var(--text-primary) !important;
+        color: #FFFFFF !important;
     }
     
     .streamlit-expanderContent {
@@ -379,79 +578,128 @@ HUAWEI_CSS = """
         border: 1px solid var(--border-color) !important;
         border-top: none !important;
         border-radius: 0 0 12px 12px !important;
+        color: #E0E0E0 !important;
     }
     
-    /* Status Indicators */
+    /* Status Indicators - ENHANCED VISIBILITY */
     .status-badge {
         display: inline-flex;
         align-items: center;
-        padding: 0.25rem 0.75rem;
+        padding: 0.3rem 0.85rem;
         border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
+        font-size: 0.75rem;
+        font-weight: 600;
         margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (min-width: 768px) {
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+        }
     }
     
     .status-success {
-        background: rgba(0, 200, 83, 0.15);
-        color: var(--success);
-        border: 1px solid var(--success);
+        background: rgba(0, 230, 118, 0.2);
+        color: #00E676 !important;
+        border: 1px solid #00E676;
     }
     
     .status-info {
-        background: rgba(0, 176, 255, 0.15);
-        color: var(--info);
-        border: 1px solid var(--info);
+        background: rgba(64, 196, 255, 0.2);
+        color: #40C4FF !important;
+        border: 1px solid #40C4FF;
     }
     
     .status-warning {
-        background: rgba(255, 214, 0, 0.15);
-        color: var(--warning);
-        border: 1px solid var(--warning);
+        background: rgba(255, 234, 0, 0.2);
+        color: #FFEA00 !important;
+        border: 1px solid #FFEA00;
     }
     
-    /* Metric Cards */
+    /* Metric Cards - RESPONSIVE */
     .metric-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 1rem;
+        border-radius: 10px;
+        padding: 0.85rem;
         text-align: center;
+    }
+    
+    @media (min-width: 768px) {
+        .metric-card {
+            border-radius: 12px;
+            padding: 1rem;
+        }
     }
     
     .metric-value {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
-        color: var(--huawei-red-light);
+        color: #FF6B7A !important;
+    }
+    
+    @media (min-width: 768px) {
+        .metric-value {
+            font-size: 2rem;
+        }
     }
     
     .metric-label {
-        color: var(--text-secondary);
-        font-size: 0.85rem;
+        color: #D0D0D0 !important;
+        font-size: 0.8rem;
         margin-top: 0.25rem;
     }
     
-    /* Warning Box */
+    @media (min-width: 768px) {
+        .metric-label {
+            font-size: 0.85rem;
+        }
+    }
+    
+    /* Warning Box - ENHANCED VISIBILITY */
     .warning-box {
-        background: linear-gradient(135deg, rgba(199, 0, 11, 0.1) 0%, rgba(255, 23, 68, 0.05) 100%);
-        border: 1px solid rgba(199, 0, 11, 0.3);
+        background: linear-gradient(135deg, rgba(199, 0, 11, 0.15) 0%, rgba(255, 23, 68, 0.1) 100%);
+        border: 1px solid rgba(199, 0, 11, 0.4);
         border-radius: 12px;
-        padding: 1.25rem;
-        margin: 1.5rem 0;
+        padding: 1rem;
+        margin: 1.25rem 0;
+    }
+    
+    @media (min-width: 768px) {
+        .warning-box {
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+        }
     }
     
     .warning-box p {
-        color: var(--text-secondary);
+        color: #E0E0E0 !important;
         margin: 0;
         line-height: 1.6;
+        font-size: 0.9rem;
     }
     
-    /* Footer */
+    @media (min-width: 768px) {
+        .warning-box p {
+            font-size: 1rem;
+        }
+    }
+    
+    /* Footer - RESPONSIVE */
     .huawei-footer {
         text-align: center;
-        padding: 2rem;
-        margin-top: 3rem;
+        padding: 1.5rem 1rem;
+        margin-top: 2rem;
         border-top: 1px solid var(--border-color);
+    }
+    
+    @media (min-width: 768px) {
+        .huawei-footer {
+            padding: 2rem;
+            margin-top: 3rem;
+        }
     }
     
     .huawei-footer img {
@@ -460,9 +708,16 @@ HUAWEI_CSS = """
     }
     
     .huawei-footer p {
-        color: var(--text-muted);
-        font-size: 0.85rem;
-        margin-top: 1rem;
+        color: #8A8A8A !important;
+        font-size: 0.8rem;
+        margin-top: 0.85rem;
+    }
+    
+    @media (min-width: 768px) {
+        .huawei-footer p {
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
     }
     
     /* Animations */
@@ -484,41 +739,72 @@ HUAWEI_CSS = """
         animation: pulse 2s infinite;
     }
     
-    /* Pipeline Visualization */
+    /* Pipeline Visualization - RESPONSIVE */
     .pipeline-step {
         display: flex;
         align-items: center;
-        padding: 0.75rem 1rem;
+        padding: 0.6rem 0.85rem;
         background: var(--bg-card);
         border: 1px solid var(--border-color);
-        border-radius: 10px;
-        margin: 0.5rem 0;
+        border-radius: 8px;
+        margin: 0.4rem 0;
+    }
+    
+    @media (min-width: 768px) {
+        .pipeline-step {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            margin: 0.5rem 0;
+        }
     }
     
     .pipeline-step-number {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         background: var(--huawei-red);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
+        color: white !important;
         font-weight: 600;
-        font-size: 0.85rem;
-        margin-right: 1rem;
+        font-size: 0.75rem;
+        margin-right: 0.75rem;
+        flex-shrink: 0;
+    }
+    
+    @media (min-width: 768px) {
+        .pipeline-step-number {
+            width: 28px;
+            height: 28px;
+            font-size: 0.85rem;
+            margin-right: 1rem;
+        }
     }
     
     .pipeline-step-text {
-        color: var(--text-primary);
-        font-size: 0.95rem;
+        color: #FFFFFF !important;
+        font-size: 0.85rem;
+    }
+    
+    @media (min-width: 768px) {
+        .pipeline-step-text {
+            font-size: 0.95rem;
+        }
     }
     
     .pipeline-connector {
         width: 2px;
-        height: 20px;
+        height: 16px;
         background: var(--huawei-red);
-        margin-left: 13px;
+        margin-left: 11px;
+    }
+    
+    @media (min-width: 768px) {
+        .pipeline-connector {
+            height: 20px;
+            margin-left: 13px;
+        }
     }
     
     /* Scrollbar Styling */
@@ -532,7 +818,7 @@ HUAWEI_CSS = """
     }
     
     ::-webkit-scrollbar-thumb {
-        background: var(--border-color);
+        background: #4D4D4D;
         border-radius: 4px;
     }
     
@@ -543,6 +829,61 @@ HUAWEI_CSS = """
     /* Spinner */
     .stSpinner > div {
         border-top-color: var(--huawei-red) !important;
+    }
+    
+    /* Buttons - ENHANCED VISIBILITY */
+    .stButton > button {
+        color: #FFFFFF !important;
+    }
+    
+    .stButton > button[kind="primary"] {
+        background: var(--huawei-gradient) !important;
+        color: #FFFFFF !important;
+        border: none !important;
+    }
+    
+    /* Column layouts - RESPONSIVE */
+    [data-testid="column"] {
+        padding: 0 0.5rem !important;
+    }
+    
+    @media (max-width: 767px) {
+        [data-testid="column"] {
+            padding: 0 0.25rem !important;
+        }
+    }
+    
+    /* Make columns stack on mobile */
+    @media (max-width: 640px) {
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap;
+        }
+        
+        [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+            flex: 1 1 100% !important;
+            max-width: 100% !important;
+            margin-bottom: 0.5rem;
+        }
+    }
+    
+    /* Source box styling - ENHANCED */
+    .source-box {
+        background: #1A1A1A;
+        border-left: 3px solid #C7000B;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .source-box strong {
+        color: #FF6B7A !important;
+    }
+    
+    .source-box p {
+        color: #D0D0D0 !important;
+        font-size: 0.85rem;
+        margin: 0.5rem 0 0 0;
+        white-space: pre-wrap;
     }
 </style>
 """
@@ -604,11 +945,11 @@ def render_warning_box(content: str):
 def render_footer():
     return """
     <div class="huawei-footer">
-        <p>🏆 Powered by <strong>Huawei Cloud</strong> Infrastructure</p>
-        <p style="font-size: 0.75rem; margin-top: 0.5rem;">
+        <p style="color: #D0D0D0 !important;">🏆 Powered by <strong style="color: #FF6B7A;">Huawei Cloud</strong> Infrastructure</p>
+        <p style="font-size: 0.75rem; margin-top: 0.5rem; color: #A0A0A0 !important;">
             ModelArts • Milvus • OBS • ECS • Ascend AI
         </p>
-        <p style="font-size: 0.7rem; margin-top: 1rem; color: #4a4a4a;">
+        <p style="font-size: 0.7rem; margin-top: 1rem; color: #707070 !important;">
             © 2024 Spark Infinity Team | Huawei ICT Competition
         </p>
     </div>
@@ -692,15 +1033,15 @@ with st.sidebar:
     # Logo and Title
     st.markdown("""
     <div style="text-align: center; padding: 1rem 0 2rem 0;">
-        <h2 style="color: #C7000B; margin: 0; font-weight: 700;">🏥 Health AI</h2>
-        <p style="color: #6B6B6B; font-size: 0.8rem; margin-top: 0.25rem;">Powered by Huawei Cloud</p>
+        <h2 style="color: #FF4757; margin: 0; font-weight: 700;">🏥 Health AI</h2>
+        <p style="color: #909090; font-size: 0.8rem; margin-top: 0.25rem;">Powered by Huawei Cloud</p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("---")
     
     # Navigation
-    st.markdown('<p style="color: #B0B0B0; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">📍 NAVIGATION</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #D0D0D0; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">📍 NAVIGATION</p>', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -717,7 +1058,7 @@ with st.sidebar:
     
     # Chat Section (only show on Chat page)
     if st.session_state.page == "Chat":
-        st.markdown('<p style="color: #B0B0B0; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">💬 CONSULTATIONS</p>', unsafe_allow_html=True)
+        st.markdown('<p style="color: #D0D0D0; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">💬 CONSULTATIONS</p>', unsafe_allow_html=True)
         
         if st.button("➕ New Consultation", key="new_chat", use_container_width=True):
             new_id = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -751,21 +1092,21 @@ with st.sidebar:
     
     # System Status
     st.markdown("---")
-    st.markdown('<p style="color: #B0B0B0; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">⚡ SYSTEM STATUS</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #D0D0D0; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">⚡ SYSTEM STATUS</p>', unsafe_allow_html=True)
     
     status_html = f"""
     <div style="font-size: 0.8rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span style="color: #6B6B6B;">RAG Engine</span>
-            <span style="color: #00C853;">● Online</span>
+            <span style="color: #A0A0A0;">RAG Engine</span>
+            <span style="color: #00E676; font-weight: 500;">● Online</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span style="color: #6B6B6B;">Milvus DB</span>
-            <span style="color: #00C853;">● Connected</span>
+            <span style="color: #A0A0A0;">Milvus DB</span>
+            <span style="color: #00E676; font-weight: 500;">● Connected</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span style="color: #6B6B6B;">LLM Service</span>
-            <span style="color: #00C853;">● Active</span>
+            <span style="color: #A0A0A0;">LLM Service</span>
+            <span style="color: #00E676; font-weight: 500;">● Active</span>
         </div>
     </div>
     """
@@ -780,9 +1121,9 @@ if page == "Welcome":
     
     # Introduction
     st.markdown("""
-    <div style="text-align: center; max-width: 800px; margin: 0 auto 2rem auto;">
-        <p style="color: #B0B0B0; font-size: 1.1rem; line-height: 1.8;">
-            Welcome to the AI-powered Health Assistant, built on <strong style="color: #C7000B;">Huawei Cloud</strong> infrastructure.
+    <div style="text-align: center; max-width: 800px; margin: 0 auto 2rem auto; padding: 0 1rem;">
+        <p style="color: #D0D0D0; font-size: 1rem; line-height: 1.8;">
+            Welcome to the AI-powered Health Assistant, built on <strong style="color: #FF4757;">Huawei Cloud</strong> infrastructure.
             This system combines advanced RAG technology with medical knowledge to assist healthcare professionals
             in diagnostic decision-making.
         </p>
@@ -946,8 +1287,8 @@ elif page == "Chat":
                             for i, source in enumerate(sources, 1):
                                 st.markdown(f"""
                                 <div style="background: #1A1A1A; border-left: 3px solid #C7000B; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 0 8px 8px 0;">
-                                    <strong style="color: #C7000B;">Source {i}</strong>
-                                    <p style="color: #B0B0B0; font-size: 0.85rem; margin: 0.5rem 0 0 0; white-space: pre-wrap;">{source}</p>
+                                    <strong style="color: #FF6B7A;">Source {i}</strong>
+                                    <p style="color: #D0D0D0; font-size: 0.85rem; margin: 0.5rem 0 0 0; white-space: pre-wrap;">{source}</p>
                                 </div>
                                 """, unsafe_allow_html=True)
     
@@ -1020,8 +1361,8 @@ elif page == "Chat":
                     for i, source in enumerate(sources, 1):
                         st.markdown(f"""
                         <div style="background: #1A1A1A; border-left: 3px solid #C7000B; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 0 8px 8px 0;">
-                            <strong style="color: #C7000B;">Source {i}</strong>
-                            <p style="color: #B0B0B0; font-size: 0.85rem; margin: 0.5rem 0 0 0; white-space: pre-wrap;">{source}</p>
+                            <strong style="color: #FF6B7A;">Source {i}</strong>
+                            <p style="color: #D0D0D0; font-size: 0.85rem; margin: 0.5rem 0 0 0; white-space: pre-wrap;">{source}</p>
                         </div>
                         """, unsafe_allow_html=True)
         
@@ -1050,9 +1391,9 @@ else:
         st.markdown("""
         <div class="feature-card">
             <h4 style="color: #FFFFFF;">Starting a Consultation</h4>
-            <ol style="color: #B0B0B0; line-height: 2;">
-                <li>Navigate to the <strong>Chat</strong> page</li>
-                <li>Click <strong>➕ New Consultation</strong> to start fresh</li>
+            <ol style="color: #D0D0D0; line-height: 2;">
+                <li>Navigate to the <strong style="color: #FF6B7A;">Chat</strong> page</li>
+                <li>Click <strong style="color: #FF6B7A;">➕ New Consultation</strong> to start fresh</li>
                 <li>Describe the patient's symptoms in detail</li>
                 <li>Review the AI-generated diagnostic suggestions</li>
                 <li>Examine the sources and GraphRAG details</li>
@@ -1064,7 +1405,7 @@ else:
         st.markdown("""
         <div class="feature-card">
             <h4 style="color: #FFFFFF;">Best Practices</h4>
-            <ul style="color: #B0B0B0; line-height: 2;">
+            <ul style="color: #D0D0D0; line-height: 2;">
                 <li>Provide detailed symptom descriptions</li>
                 <li>Include patient history when relevant</li>
                 <li>Mention any existing conditions</li>
@@ -1084,7 +1425,7 @@ else:
         <div class="feature-card" style="text-align: center;">
             <div style="font-size: 2.5rem;">🧠</div>
             <h4 style="color: #FFFFFF; margin: 0.5rem 0;">Milvus</h4>
-            <p style="color: #6B6B6B; font-size: 0.8rem;">Vector Database</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">Vector Database</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1093,7 +1434,7 @@ else:
         <div class="feature-card" style="text-align: center;">
             <div style="font-size: 2.5rem;">🤖</div>
             <h4 style="color: #FFFFFF; margin: 0.5rem 0;">DeepSeek</h4>
-            <p style="color: #6B6B6B; font-size: 0.8rem;">LLM Engine</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">LLM Engine</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1102,7 +1443,7 @@ else:
         <div class="feature-card" style="text-align: center;">
             <div style="font-size: 2.5rem;">☁️</div>
             <h4 style="color: #FFFFFF; margin: 0.5rem 0;">ModelArts</h4>
-            <p style="color: #6B6B6B; font-size: 0.8rem;">AI Platform</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">AI Platform</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1111,7 +1452,7 @@ else:
         <div class="feature-card" style="text-align: center;">
             <div style="font-size: 2.5rem;">📦</div>
             <h4 style="color: #FFFFFF; margin: 0.5rem 0;">OBS</h4>
-            <p style="color: #6B6B6B; font-size: 0.8rem;">Object Storage</p>
+            <p style="color: #A0A0A0; font-size: 0.8rem;">Object Storage</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1152,3 +1493,7 @@ else:
     
     # Footer
     st.markdown(render_footer(), unsafe_allow_html=True)
+
+    # Footer
+    st.markdown(render_footer(), unsafe_allow_html=True)
+
