@@ -3,6 +3,33 @@ LLM API Client for DeepSeek v3.1 and Qwen3-32B
 Handles API calls to DeepSeek v3.1 via direct API or Huawei ModelArts.
 Supports Qwen3-32B as alternative/fallback model via ModelArts.
 All models use OpenAI-compatible API format.
+
+Working Postman Response Format:
+{
+    "id": "chat-xxx",
+    "object": "chat.completion",
+    "created": 1234567890,
+    "model": "deepseek-v3.1",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "response text",
+                "reasoning_content": null,
+                "tool_calls": []
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 13,
+        "total_tokens": 15,
+        "completion_tokens": 2
+    }
+}
 """
 import logging
 import requests
@@ -45,8 +72,8 @@ class ModelArtsClient:
             # Use Huawei ModelArts (same endpoint for all models)
             self.endpoint = f"{MODELARTS_ENDPOINT.rstrip('/')}/v1/chat/completions"
             self.model_name = MODELARTS_MODEL_NAME or "deepseek-v3.1"
-            self.auth_header = "X-Auth-Token"
-            self.auth_prefix = ""  # No prefix for X-Auth-Token
+            self.auth_header = "Authorization"
+            self.auth_prefix = "Bearer "  # Use Bearer token format like Postman
             logger.info(f"✅ Using Huawei ModelArts: {self.endpoint}")
         
         if not self.api_key:
@@ -81,6 +108,17 @@ class ModelArtsClient:
         """
         Invoke primary model (DeepSeek v3.1) via API.
         
+        Request format (matching working Postman):
+        POST /v1/chat/completions
+        Headers:
+            Content-Type: application/json
+            Authorization: Bearer <api_key>
+        Body:
+            {
+                "model": "deepseek-v3.1",
+                "messages": [{"role": "user", "content": "..."}]
+            }
+        
         Args:
             prompt: User prompt/question
             temperature: Sampling temperature (default: from config)
@@ -107,34 +145,46 @@ class ModelArtsClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
         
-        # Prepare payload (OpenAI-compatible format)
+        # Prepare payload - matching Postman working format
         payload = {
             "model": self.model_name,
-            "messages": messages,
-            "temperature": temp,
-            "max_tokens": max_toks,
-            "stream": False
+            "messages": messages
         }
         
-        # Prepare headers based on API type
+        # Add optional parameters only if specified (Postman might not send these)
+        if temp is not None and temp != 0.2:  # Only add if not default
+            payload["temperature"] = temp
+        if max_toks is not None and max_toks != 2048:  # Only add if not default
+            payload["max_tokens"] = max_toks
+        
+        # Prepare headers - using Authorization: Bearer format (matching Postman)
         headers = {
             "Content-Type": "application/json",
-            self.auth_header: f"{self.auth_prefix}{self.api_key}"
+            "Authorization": f"Bearer {self.api_key}"
         }
         
         try:
             logger.info(f"Calling API: {url}")
-            logger.debug(f"Model: {self.model_name}, Temperature: {temp}, Max Tokens: {max_toks}")
+            logger.info(f"Model: {self.model_name}")
+            logger.debug(f"Payload: {json.dumps(payload, ensure_ascii=False)[:500]}")
             
             response = requests.post(
                 url, 
                 headers=headers, 
                 json=payload, 
-                timeout=60
+                timeout=120  # Increased timeout for longer responses
             )
             response.raise_for_status()
             
             result = response.json()
+            
+            # Log response info (matching Postman response structure)
+            if "id" in result:
+                logger.info(f"✅ API Response ID: {result.get('id')}")
+            if "usage" in result:
+                usage = result["usage"]
+                logger.info(f"✅ Tokens - Prompt: {usage.get('prompt_tokens')}, Completion: {usage.get('completion_tokens')}, Total: {usage.get('total_tokens')}")
+            
             logger.info(f"✅ {self.model_name} API call successful")
             return result
             
@@ -168,6 +218,17 @@ class ModelArtsClient:
         Invoke Qwen3-32B model via Huawei ModelArts.
         Uses the SAME endpoint and API key as DeepSeek, only model name changes.
         
+        Request format (same as DeepSeek):
+        POST /v1/chat/completions
+        Headers:
+            Content-Type: application/json
+            Authorization: Bearer <api_key>
+        Body:
+            {
+                "model": "qwen3-32b",
+                "messages": [{"role": "user", "content": "..."}]
+            }
+        
         Args:
             prompt: User prompt/question
             temperature: Sampling temperature
@@ -190,34 +251,46 @@ class ModelArtsClient:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
         
-        # Prepare payload - only model name changes to qwen3-32b
+        # Prepare payload - matching Postman format, only model name changes
         payload = {
             "model": self.qwen_model_name,
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "stream": False
+            "messages": messages
         }
         
-        # Use the SAME authentication as primary model
+        # Add optional parameters only if not default values
+        if temperature is not None and temperature != 0.2:
+            payload["temperature"] = temperature
+        if max_tokens is not None and max_tokens != 2048:
+            payload["max_tokens"] = max_tokens
+        
+        # Use Authorization: Bearer format (matching Postman)
         headers = {
             "Content-Type": "application/json",
-            self.auth_header: f"{self.auth_prefix}{self.api_key}"
+            "Authorization": f"Bearer {self.api_key}"
         }
         
         try:
             logger.info(f"Calling Qwen3-32B API: {url}")
-            logger.debug(f"Model: {self.qwen_model_name}, Temperature: {temperature}, Max Tokens: {max_tokens}")
+            logger.info(f"Model: {self.qwen_model_name}")
+            logger.debug(f"Payload: {json.dumps(payload, ensure_ascii=False)[:500]}")
             
             response = requests.post(
                 url,
                 headers=headers,
                 json=payload,
-                timeout=90  # Qwen may need more time
+                timeout=120  # Increased timeout
             )
             response.raise_for_status()
             
             result = response.json()
+            
+            # Log response info (matching Postman response structure)
+            if "id" in result:
+                logger.info(f"✅ API Response ID: {result.get('id')}")
+            if "usage" in result:
+                usage = result["usage"]
+                logger.info(f"✅ Tokens - Prompt: {usage.get('prompt_tokens')}, Completion: {usage.get('completion_tokens')}, Total: {usage.get('total_tokens')}")
+            
             logger.info("✅ Qwen3-32B API call successful")
             return result
             
@@ -257,7 +330,27 @@ class ModelArtsClient:
     
     def extract_response_text(self, api_response: Dict[str, Any]) -> str:
         """
-        Extract text response from DeepSeek API response (OpenAI-compatible format).
+        Extract text response from API response.
+        
+        Expected Postman response format:
+        {
+            "id": "chat-xxx",
+            "object": "chat.completion",
+            "model": "deepseek-v3.1",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": "response text",
+                        "reasoning_content": null,
+                        "tool_calls": []
+                    },
+                    "finish_reason": "stop"
+                }
+            ],
+            "usage": {...}
+        }
         
         Args:
             api_response: API response dictionary
@@ -269,29 +362,43 @@ class ModelArtsClient:
             return ""
         
         try:
-            # OpenAI-compatible response format
+            # Primary format: choices[0].message.content (matching Postman)
             if "choices" in api_response and len(api_response["choices"]) > 0:
                 choice = api_response["choices"][0]
+                
+                # Standard message format
                 if "message" in choice:
-                    content = choice["message"].get("content", "")
+                    message = choice["message"]
+                    content = message.get("content", "")
+                    
+                    # Log reasoning_content if available (DeepSeek feature)
+                    reasoning = message.get("reasoning_content")
+                    if reasoning:
+                        logger.debug(f"Reasoning content available: {reasoning[:200]}...")
+                    
                     if content:
                         return content
+                
+                # Legacy text format
                 elif "text" in choice:
                     return choice["text"]
+                
+                # Streaming format
                 elif "delta" in choice and "content" in choice["delta"]:
-                    # Streaming response format
                     return choice["delta"]["content"]
             
-            # Fallback: try to find content in response
+            # Fallback: direct content field
             if "content" in api_response:
                 return api_response["content"]
             
-            # If no standard format, log warning and return string representation
+            # Log unexpected format
             logger.warning(f"Unexpected API response format: {list(api_response.keys())}")
+            logger.debug(f"Full response: {json.dumps(api_response, ensure_ascii=False)[:500]}")
             return str(api_response)
             
         except Exception as e:
             logger.error(f"Error extracting response text: {e}")
+            logger.debug(f"Raw response: {api_response}")
             return ""
     
     def is_available(self) -> bool:

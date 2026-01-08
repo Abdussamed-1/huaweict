@@ -126,8 +126,7 @@ huaweict/
    
    Edit `.env` file with your credentials:
    ```env
-   # API Keys
-   GOOGLE_API_KEY=your_google_api_key
+   # DeepSeek API Key (Huawei ModelArts)
    DEEPSEEK_API_KEY=your_deepseek_api_key
    
    # Milvus Configuration
@@ -242,12 +241,12 @@ The application will be available at `http://localhost:8501`
 
 ### ModelArts Integration
 
-To use DeepSeek v3.1 model from Huawei ModelArts:
+To use DeepSeek v3.1 or Qwen3-32B model from Huawei ModelArts:
 
 1. Deploy model in ModelArts
 2. Get endpoint URL
 3. Update `MODELARTS_ENDPOINT` in `.env`
-4. Modify `rag_service.py` to use ModelArts API instead of Google Gemini
+4. Set `DEEPSEEK_API_KEY` with your API key
 
 ## 📊 Architecture Components
 
@@ -277,9 +276,9 @@ To use DeepSeek v3.1 model from Huawei ModelArts:
 ### 4. Intelligence Layer
 - **Purpose**: Generate responses using LLM
 - **Models**:
-  - Google Gemini (default)
-  - DeepSeek v3.1 via ModelArts (configurable)
-  - Accelerated with Ascend chips
+  - DeepSeek v3.1 via ModelArts (default)
+  - Qwen3-32B via ModelArts (optional)
+  - Accelerated with Huawei Ascend chips
 
 ### 5. Data & Memory Layer
 - **Milvus**: Vector and graph database

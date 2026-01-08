@@ -902,13 +902,13 @@ elif page == "Chat":
     
     # Display chat history
     with chat_container:
-    for idx, msg in enumerate(history):
-        if not isinstance(msg, dict):
-            continue
+        for idx, msg in enumerate(history):
+            if not isinstance(msg, dict):
+                continue
             
-        role = msg.get("role", "user")
+            role = msg.get("role", "user")
             content = msg.get("content", "")
-        
+            
             with st.chat_message(role, avatar="👨‍⚕️" if role == "user" else "🤖"):
                 st.markdown(content)
                 
